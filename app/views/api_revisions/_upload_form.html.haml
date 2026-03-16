@@ -1,0 +1,20 @@
+= form_with model: api_revision, url: project_api_specification_api_revisions_path(@api_specification),
+            html: { multipart: true }, class: "space-y-8" do |f|
+  .space-y-2
+    = f.label :file, "OpenAPI File (JSON or YAML)", class: "block text-sm font-medium text-zinc-400"
+    .border-2.border-dashed.border-zinc-600.rounded-3xl.p-12.text-center.cursor-pointer.hover:border-emerald-500.transition-colors
+      = f.file_field :file, accept: ".json,.yaml,.yml", class: "hidden", id: "openapi-file"
+      %label{for: "openapi-file", class: "cursor-pointer flex flex-col items-center"}
+        %span.text-6xl.mb-4 📤
+        %span.font-medium.text-lg Drop file here or click to upload
+        %span.text-sm.text-zinc-500.mt-2 Supported: OpenAPI 3.0 / 3.1 JSON or YAML
+
+  .space-y-2
+    = f.label :commit_message, "Commit Message", class: "block text-sm font-medium text-zinc-400"
+    = f.text_field :commit_message, placeholder: "Added /payments endpoint", class: "w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-emerald-500 text-white"
+
+  .flex.items-center.gap-3
+    = f.check_box :is_published, class: "w-5 h-5 accent-emerald-500"
+    %span.text-sm.text-zinc-400 Publish this revision immediately (makes it visible to viewers)
+
+  = f.submit "Upload & Parse", class: "w-full bg-emerald-600 hover:bg-emerald-700 py-4 rounded-3xl font-semibold text-white transition-all text-lg"

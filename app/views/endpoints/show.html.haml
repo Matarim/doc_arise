@@ -1,0 +1,38 @@
+%div
+  .max-w-4xl.mx-auto
+    .bg-zinc-900.border.border-zinc-800.rounded-3xl.p-10
+      .flex.items-center.gap-4.mb-8
+        %span.px-5.py-2.text-lg.font-mono.rounded-2xl{class: method_badge_class(@endpoint.method)}= @endpoint.method.upcase
+        %h1.font-mono.text-3xl.font-bold= @endpoint.path
+
+      - if @endpoint.summary.present?
+        %p.text-xl.text-zinc-300.mb-8= @endpoint.summary
+
+      - if @endpoint.description.present?
+        %p.text-zinc-400.mb-10= @endpoint.description
+
+      / Parameters
+      - if @endpoint.parameters.any?
+        %h2.text-lg.font-semibold.mb-4 Parameters
+        .space-y-4
+          - @endpoint.parameters.each do |param|
+            .bg-zinc-950.border.border-zinc-700.rounded-2xl.p-5
+              .flex.justify-between
+                %div
+                  %span.font-mono.text-blue-400= param.name
+                  %span.text-xs.text-zinc-500.ml-3= param.in_location.upcase
+                  - if param.required
+                    %span.ml-2.px-2.py-0.5.text-[10px].bg-red-900.text-red-300.rounded-full required
+                %div.text-xs.text-zinc-400= param.description
+
+      / Responses
+      - if @endpoint.responses.any?
+        %h2.text-lg.font-semibold.mt-12.mb-4 Responses
+        .space-y-3
+          - @endpoint.responses.each do |resp|
+            .flex.gap-6.bg-zinc-950.border.border-zinc-700.rounded-2xl.p-5
+              %div.font-mono.font-bold.w-20= resp.status_code
+              %div.flex-1
+                %p.text-zinc-300= resp.description
+                - if resp.content.present?
+                  %pre.mt-3.text-xs.bg-black.p-4.rounded-xl.overflow-auto= JSON.pretty_generate(resp.content).truncate(500)

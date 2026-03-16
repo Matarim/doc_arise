@@ -1,0 +1,38 @@
+.response-row.bg-zinc-950.border.border-zinc-700.rounded-2xl.p-6.flex.flex-col.gap-4
+  .grid.grid-cols-12.gap-2
+    .col-span-3
+      = select_tag "api_revision[responses][][status_code]",
+                   options_for_select([["200 OK", "200"], ["201 Created", "201"], ["202 Accepted", "202"],
+        ["204 No Content", "204"], ["400 Bad Request", "400"],
+        ["401 Unauthorized", "401"], ["403 Forbidden", "403"],
+        ["404 Not Found", "404"], ["405 Method Not Allowed", "405"],
+        ["409 Conflict", "409"], ["410 Gone", "410"],
+        ["422 Unprocessable Entity", "422"], ["429 Too Many Requests", "429"],
+        ["500 Internal Server Error", "500"], ["501 Not Implemented", "501"],
+        ["503 Service Unavailable", "503"]], "200"),
+        class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-emerald-500 text-white cursor-pointer"
+    .col-span-9
+      = text_field_tag "api_revision[responses][][description]", nil,
+                       placeholder: "Description of this response (e.g. User created successfully)",
+                       class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-emerald-500 text-white"
+
+  / Media Type
+  .bg-zinc-950.border.border-zinc-700.rounded-2xl.p-5.mt-2
+    .grid.grid-cols-2.gap-2
+      .flex-1
+        %label.block.text-sm.font-medium.text-zinc-400.mb-3 Media Type
+        = select_tag "api_revision[responses][][response_body][media_type]",
+                     options_for_select(%w[application/json application/xml text/plain], "application/json"),
+                     class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-emerald-500 text-white cursor-pointer"
+
+    / Properties inside this response
+    %label.block.text-sm.font-medium.text-zinc-400.my-3 Response Schema Properties
+    .response-properties-list.space-y-2{ data: { manual_editor_target: "responsePropertiesContainer" } }
+  %button{ type: "button", data: { action: "manual-editor#addResponseProperty" },
+           class: "custom-form-field mt-4 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 cursor-pointer" }
+    + Add Property
+
+  .flex.justify-end.mt-4
+    %button{ type: "button", data: { action: "manual-editor#removeResponse" },
+             class: "text-red-400 hover:text-red-300 cursor-pointer" }
+      Remove

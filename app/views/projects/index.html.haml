@@ -1,0 +1,51 @@
+%div
+  .max-w-7xl.mx-auto
+    .flex.justify-between.items-end.mb-10
+      .space-y-1
+        %h1.text-5xl.font-bold.tracking-tighter Projects
+        %p.text-zinc-400 All your API documentation projects
+
+      = link_to new_project_path, class: "flex items-center gap-3 bg-blue-600 hover:bg-blue-700 px-8 py-4 rounded-3xl font-semibold text-white shadow-lg shadow-blue-500/30" do
+        %span.text-xl +
+        New Project
+
+    / Projects Grid
+    .grid.grid-cols-1.md:grid-cols-2.lg:grid-cols-3.gap-6
+      - @projects.each do |project|
+        .bg-zinc-900.border.border-zinc-800.rounded-3xl.overflow-hidden.hover:border-blue-500.transition-all.group
+          .h-2.bg-gradient-to-r.from-blue-500.to-emerald-500
+
+          .p-6
+            .flex.justify-between.items-start.mb-4
+              .flex.items-center.gap-3
+                %span.text-4xl 📘
+                %div
+                  %h3.font-semibold.text-xl= project.name
+                  %p.text-xs.text-zinc-500= project.slug
+
+              %span.px-3.py-1.text-xs.font-medium.rounded-full.bg-zinc-800.text-zinc-400
+                = project.workspace.name
+
+            %p.text-zinc-400.line-clamp-2.mb-6
+              = project.description || "No description yet."
+            .flex.items-center.justify-between.text-xs
+              .flex.items-center.gap-5
+                %div
+                  %span.text-emerald-400.font-medium 0
+                  %span.text-zinc-500 revisions
+                %div
+                  %span.text-blue-400.font-medium 0
+                  %span.text-zinc-500 endpoints
+
+              = link_to project_path(project), class: "text-blue-400 hover:text-blue-500 font-medium flex items-center gap-1 text-sm" do
+                Open
+                %span.text-lg →
+
+    / Empty state
+    - if @projects.empty?
+      .text-center.py-20
+        %div.text-6xl.mb-6 📭
+        %h3.text-2xl.font-medium.mb-3 No projects yet
+        %p.text-zinc-400.mb-8 Create your first project to start documenting APIs
+        = link_to new_project_path, class: "inline-flex items-center gap-3 bg-blue-600 hover:bg-blue-700 px-10 py-4 rounded-3xl font-semibold text-white" do
+          + Create First Project

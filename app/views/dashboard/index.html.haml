@@ -1,0 +1,22 @@
+.mb-12
+  .flex.items-center.justify-between.mb-6
+    %h2.text-2xl.font-semibold Recent Projects
+    = link_to new_project_path, class: "text-blue-400 hover:underline text-sm flex items-center gap-1" do
+      + New Project
+
+  .grid.grid-cols-1.md:grid-cols-3.gap-6
+    - @recent_projects.each do |project|
+      .bg-zinc-900.border.border-zinc-800.rounded-3xl.p-6.hover:border-blue-500.transition-all.group
+        .flex.justify-between.mb-4
+          .flex.items-center.gap-3
+            %span.text-3xl 📘
+            %div
+              %p.font-semibold.text-lg
+                = link_to project.name, project, class: "text-white hover:underline flex items-center gap-1"
+              %p.text-xs.text-zinc-500
+                = project.workspace.name
+        .flex.justify-between.text-xs
+          %span.text-emerald-400
+            0 revisions
+          %span.text-zinc-400
+            = project.slug

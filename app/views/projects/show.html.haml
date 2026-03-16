@@ -1,0 +1,45 @@
+%div
+  .max-w-7xl.mx-auto
+    .flex.justify-between.items-start.mb-10
+      .flex.items-center.gap-6
+        %span.text-6xl 📘
+        .space-y-1
+          %h1.text-5xl.font-bold.tracking-tighter
+            = @project.name
+          %p.text-zinc-400
+            = @project.description
+          %p.text-xs.text-zinc-500.font-mono
+            = @project.slug
+
+      .flex.gap-4
+        = link_to new_project_api_specification_path(@project),
+                  class: "bg-emerald-600 hover:bg-emerald-700 px-8 py-3.5 rounded-3xl font-semibold text-white flex items-center gap-3" do
+          %span.text-xl +
+          New API Specification
+
+    / API Specifications Section
+    %h2.text-2xl.font-semibold.mb-6 API Specifications
+    .space-y-4
+      - if @project.api_specifications.any?
+        - @project.api_specifications.each do |spec|
+          = link_to project_api_specification_path(@project, spec),
+                    class: "block bg-zinc-900 border border-zinc-800 hover:border-emerald-500 rounded-3xl p-6 transition-all" do
+            .flex.justify-between.items-center
+              .flex.items-center.gap-5
+                %span.text-4xl 📋
+                .space-y-1
+                  %p.font-semibold.text-xl
+                    = spec.name
+                  %p.text-xs.text-zinc-500
+                    = spec.description
+              .flex.items-center.gap-8.text-sm
+                %span.text-emerald-400.font-medium
+                  = spec.api_revisions.count
+                  revisions
+                %span.text-zinc-400 → Open Documentation
+      - else
+        .text-center.py-20.border.border-dashed.border-zinc-700.rounded-3xl
+          %p.text-zinc-400 No API specifications yet
+          = link_to new_project_api_specification_path(@project),
+                    class: "mt-6 inline-block bg-emerald-600 hover:bg-emerald-700 px-8 py-3 rounded-3xl text-white font-semibold" do
+            + Add First API Specification

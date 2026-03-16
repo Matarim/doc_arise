@@ -1,0 +1,25 @@
+.flex.min-h-screen.items-center.justify-center.bg-zinc-950
+  .max-w-md.w-full
+    .bg-zinc-900.border.border-zinc-800.rounded-3xl.shadow-2xl.p-10
+      %h1.text-4xl.font-bold.text-center.mb-8.tracking-tight
+        Create your first Workspace
+
+      - if flash[:alert].present?
+        .bg-red-900.border.border-red-700.text-red-200.px-5.py-3.rounded-2xl.mb-6
+          = flash[:alert]
+
+      = form_with model: @workspace, class: "space-y-6" do |f|
+        .space-y-2
+          = f.label :name, "Workspace name", class: "block text-sm font-medium text-zinc-400"
+          = f.text_field :name, autofocus: true, placeholder: "Billing API Team",
+                          class: "w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-500 text-white"
+
+        .space-y-2
+          = f.label :description, "Description", class: "block text-sm font-medium text-zinc-400"
+          = f.text_area :description, rows: 3, placeholder: "All our public and internal APIs...",
+                          class: "w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-500 text-white resize-y"
+
+        = f.submit "Create Workspace", class: "w-full bg-emerald-600 hover:bg-emerald-700 py-4 rounded-2xl font-semibold text-white transition-all mt-4 cursor-pointer"
+
+      .text-center.mt-8.text-sm.text-zinc-500
+        You can create more workspaces later

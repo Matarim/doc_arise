@@ -1,0 +1,14 @@
+%div
+  .max-w-7xl.mx-auto
+    .flex.justify-between.mb-10
+      %h1.text-4xl.font-bold.tracking-tighter Schemas
+      = form_with url: api_revision_schemas_path(@api_revision), method: :get do |f|
+        = f.text_field :q, value: params[:q], placeholder: "Search schemas...", class: "bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 w-96"
+
+    .grid.grid-cols-1.md:grid-cols-2.lg:grid-cols-3.gap-6
+      - @schemas.each do |schema|
+        .bg-zinc-900.border.border-zinc-800.rounded-3xl.p-6.hover:border-purple-500.transition-all
+          %div.font-mono.text-purple-400.text-lg.mb-3= schema.name
+          %p.text-xs.text-zinc-400.line-clamp-3= schema.description || "No description"
+          = link_to api_revision_schema_path(@api_revision, schema), class: "text-purple-400 hover:underline text-sm mt-4 block" do
+            View Schema →

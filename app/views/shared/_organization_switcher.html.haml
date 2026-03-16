@@ -1,0 +1,24 @@
+%div.relative
+  %button#org-switcher.flex.items-center.justify-between.w-full.bg-zinc-800.hover:bg-zinc-700.px-5.py-3.rounded-2xl.text-left.transition-colors{ data: { controller: "dropdown" } }
+    .flex.items-center.gap-3
+      %span.text-2xl 🏢
+      %div
+        %p.font-semibold.text-sm
+          = Current.user&.organizations&.first&.name || "No organization yet"
+        %p.text-xs.text-zinc-500
+          = Current.user&.workspaces&.first&.name || "Create your first workspace"
+    %span.text-xs.text-zinc-400 ▼
+
+  .hidden.absolute.mt-2.w-full.bg-zinc-900.border.border-zinc-700.rounded-3xl.shadow-2xl.py-2.z-50{ id: "org-dropdown" }
+    - if authenticated?
+      - Current.user.organizations.each do |org|
+        .px-4.py-3.hover:bg-zinc-800.cursor-pointer.flex.items-center.gap-3
+          %span.text-xl 🏢
+          %div
+            %p.font-medium
+              = org.name
+            %p.text-xs.text-zinc-500
+              = org.slug
+      .border-t.border-zinc-700.my-2
+      = link_to new_organization_path, class: "block px-6 py-3 text-blue-400 hover:bg-zinc-800 text-sm flex items-center gap-2" do
+        + Create new organization

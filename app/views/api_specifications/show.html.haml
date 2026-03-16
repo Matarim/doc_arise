@@ -1,0 +1,68 @@
+.max-w-7xl.mx-auto
+  / HEADER + VERSION SELECTOR
+  .flex.justify-between.items-center.mb-10
+    .flex.items-center.gap-6
+      %div
+        %h1.text-4xl.font-bold.tracking-tighter
+          = @api_specification.name
+        %p.text-zinc-400
+          = @api_specification.description.presence || "No description provided"
+        %p.text-xs.text-zinc-500
+          = @api_specification.project.name
+
+      / Version Selector (only if revisions exist)
+      - if @api_specification.api_revisions.any?
+        .flex.items-center.gap-3
+          %span.text-sm.font-medium.text-zinc-400 Version:
+          = select_tag :revision_id,
+                       options_from_collection_for_select(@api_specification.api_revisions.order(revision_number: :desc),
+            :id,
+            :revision_number,
+            @selected_revision&.id),
+            class: "bg-zinc-900 border border-zinc-700 rounded-2xl px-5 py-3 text-white focus:outline-none focus:border-emerald-500",
+            data: { controller: "revision-selector", action: "change->revision-selector#switchRevision" }
+
+    .flex.gap-3
+      / Export buttons – only when a revision exists
+      - if @selected_revision
+        = link_to "Export JSON",
+                  project_api_specification_api_revision_path(@project, @api_specification, @selected_revision, format: :json),
+                  class: "px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-2xl font-medium flex items-center gap-2"
+        = link_to "Export YAML",
+                  project_api_specification_api_revision_path(@project, @api_specification, @selected_revision, format: :yaml),
+                  class: "px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-2xl font-medium flex items-center gap-2"
+
+      = link_to new_project_api_specification_api_revision_path(@project, @api_specification),
+                class: "bg-emerald-600 hover:bg-emerald-700 px-8 py-3 rounded-3xl font-semibold text-white flex items-center gap-3" do
+        %span.text-xl +
+        New Revision
+
+  / MAIN CONTENT
+  - if @selected_revision
+    .grid.grid-cols-12.gap-8
+      / LEFT: Paths Sidebar
+      .col-span-4
+        = render "api_revisions/paths_sidebar", revision: @selected_revision
+
+      / RIGHT: Full Documentation Viewer
+      .col-span-8
+        %turbo-frame#documentation-frame{ src: project_api_specification_api_revision_documentation_path(@project, @api_specification, @selected_revision) }
+          .flex.items-center.justify-center.h-96
+            %p.text-zinc-400 Loading documentation...
+  - else
+    / Empty state (beautiful + actionable)
+    .bg-zinc-950.border.border-zinc-700.rounded-3xl.p-16.text-center
+      %div.mx-auto.w-16.h-16.bg-zinc-800.rounded-2xl.flex.items-center.justify-center.mb-6
+        📋
+      %h2.text-3xl.font-light.text-zinc-300.mb-3 No revisions yet
+      %p.text-zinc-500.max-w-md.mx-auto.mb-8
+        Create your first revision to see live paths, documentation, and export options.
+      = link_to new_project_api_specification_api_revision_path(@project, @api_specification),
+                class: "inline-block bg-emerald-600 hover:bg-emerald-700 px-10 py-4 rounded-3xl font-semibold text-white text-lg" do
+        + Create First Revision
+
+  / Revisions History (always visible)
+  .mt-12
+    %details
+      %summary.text-lg.font-medium.cursor-pointer.mb-4 Revisions History
+      = render "api_revisions/revision_list", revisions: @api_specification.api_revisions.order(revision_number: :desc)

@@ -1,0 +1,17 @@
+.flex.mt-10.items-center.justify-center.bg-zinc-950
+  .max-w-md.w-full
+    .bg-zinc-900.border.border-zinc-800.rounded-3xl.shadow-2xl.p-10
+      %h1.text-4xl.font-bold.text-center.mb-8.tracking-tight New API Specification
+
+      %p.text-zinc-400.mb-8 In project: <strong>#{@project.name}</strong>
+
+      = form_with model: @api_specification, url: project_api_specifications_path(@project), class: "space-y-6" do |f|
+        .space-y-2
+          = f.label :name, "API Name", class: "block text-sm font-medium text-zinc-400"
+          = f.text_field :name, placeholder: "Public API v2", class: "w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-500 text-white"
+
+        .space-y-2
+          = f.label :description, "Description", class: "block text-sm font-medium text-zinc-400"
+          = f.text_area :description, rows: 3, placeholder: "Main REST API for external developers", class: "w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-500 text-white"
+
+        = f.submit "Create API Specification", class: "w-full bg-emerald-600 hover:bg-emerald-700 py-4 rounded-2xl font-semibold text-white transition-all mt-6"

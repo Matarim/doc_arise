@@ -1,0 +1,38 @@
+%div
+  .max-w-7xl.mx-auto
+    .flex.justify-between.items-center.mb-10
+      %div
+        %h1.text-4xl.font-bold.tracking-tighter
+          = @api_specification.name
+        %p.text-zinc-400
+          Revisions • #{@api_specification.project.name}
+
+      = link_to new_project_api_specification_api_revision_path(@api_specification),
+                class: "bg-emerald-600 hover:bg-emerald-700 px-8 py-3.5 rounded-3xl font-semibold text-white flex items-center gap-3" do
+        %span.text-xl +
+        Upload New Revision
+
+    .bg-zinc-900.border.border-zinc-800.rounded-3xl.overflow-hidden
+      %table.w-full
+        %thead
+          %tr.border-b.border-zinc-700
+            %th.px-8.py-5.text-left.text-xs.font-medium.text-zinc-500 Revision
+            %th.px-8.py-5.text-left.text-xs.font-medium.text-zinc-500 Commit Message
+            %th.px-8.py-5.text-left.text-xs.font-medium.text-zinc-500 Uploaded
+            %th.px-8.py-5.text-left.text-xs.font-medium.text-zinc-500 Status
+            %th.px-8.py-5.text-right.text-xs.font-medium.text-zinc-500 Actions
+
+        %tbody.divide-y.divide-zinc-800
+          - @revisions.each do |rev|
+            %tr.hover:bg-zinc-800.transition-colors
+              %td.px-8.py-5.font-mono.text-blue-400 ##{rev.revision_number}
+              %td.px-8.py-5.text-zinc-300= rev.commit_message
+              %td.px-8.py-5.text-xs.text-zinc-500= rev.created_at.strftime("%b %d, %Y %H:%M")
+              %td.px-8.py-5
+                - if rev.is_published
+                  %span.px-4.py-1.text-xs.bg-emerald-900.text-emerald-300.rounded-full Published
+                - else
+                  %span.px-4.py-1.text-xs.bg-amber-900.text-amber-300.rounded-full Draft
+              %td.px-8.py-5.text-right
+                = link_to "#", class: "text-blue-400 hover:underline text-sm" do
+                  View Diff

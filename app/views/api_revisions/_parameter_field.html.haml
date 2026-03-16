@@ -1,0 +1,16 @@
+.parameter-row.bg-zinc-950.border.border-zinc-700.rounded-2xl.p-5.flex.gap-6{ data: { manual_editor_target: "parameterRow" } }
+  .flex-1
+    = f.text_field "parameters[][name]", placeholder: "parameter_name",
+                   class: "w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-emerald-500 text-white font-mono"
+  .w-40
+    = f.select "parameters[][in_location]", %w[query path header cookie], {},
+               class: "w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-emerald-500 text-white"
+  .w-24.flex.items-center
+    = f.check_box "parameters[][required]", class: "w-5 h-5 accent-emerald-500"
+    %span.text-sm.ml-2 Required
+  .flex-1
+    = f.text_field "parameters[][description]", placeholder: "Add a description",
+                   class: "w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-emerald-500 text-white"
+  %button{ type: "button", data: { action: "manual-editor#removeParameter" },
+           class: "text-red-400 hover:text-red-300 self-center" }
+    ✕

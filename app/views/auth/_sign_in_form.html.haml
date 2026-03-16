@@ -1,0 +1,33 @@
+%turbo-frame#auth_form{ data: { controller: "auth", auth_target: "frame" } }
+  .bg-zinc-900.border.border-zinc-800.rounded-3xl.shadow-2xl.p-10.max-w-lg.mx-auto.mt-20
+    %h1.text-4xl.font-bold.text-center.mb-8.tracking-tight Sign in to DocArise
+
+    - if flash[:alert]
+      .bg-red-900.border.border-red-700.text-red-200.px-5.py-3.rounded-2xl.mb-6.text-sm= flash[:alert]
+
+    = form_with url: sign_in_path, class: "space-y-6" do |f|
+      .space-y-2
+        = f.label :email_address, "Email address", class: "block text-sm font-medium text-zinc-400"
+        = f.email_field :email_address, autofocus: true, value: @user&.email_address,
+                        class: "w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-500 text-white"
+
+      .space-y-2
+        = f.label :password, "Password", class: "block text-sm font-medium text-zinc-400"
+        = f.password_field :password, class: "w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-500 text-white"
+
+      = f.submit "Sign in", class: "w-full bg-blue-600 hover:bg-blue-700 py-4 rounded-2xl font-semibold text-white transition-all"
+
+    .my-8.border-t.border-zinc-800.relative
+      .absolute.px-6.text-xs.text-zinc-500{ class: "left-1/2 -translate-x-1/2 bg-zinc-900" }
+        OR
+
+    .grid.grid-cols-2.gap-4
+      = link_to "/auth/google_oauth2", method: :post, class: "flex items-center justify-center gap-3 bg-white text-black font-medium py-4 rounded-2xl hover:bg-zinc-100" do
+        Google
+      = link_to "/auth/entra_id", method: :post, class: "flex items-center justify-center gap-3 bg-[#00A4EF] text-white font-medium py-4 rounded-2xl hover:bg-[#0088CC]" do
+        Microsoft
+
+    .text-center.mt-10.text-sm
+      Don’t have an account?
+      %button{ data: { action: "auth#switchToSignUp" }, class: "text-blue-400 hover:underline font-medium cursor-pointer" }
+        Sign up

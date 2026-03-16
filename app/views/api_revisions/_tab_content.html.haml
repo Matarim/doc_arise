@@ -1,0 +1,15 @@
+- if params[:tab] == "parameters"
+  #parameters-tab
+    %h4.text-lg.font-medium.mb-6 Parameters
+    #parameters-list.space-y-4{ data: { manual_editor_target: "parametersContainer" } }
+    %button{ type: "button", data: { action: "manual-editor#addParameter" },
+             class: "mt-6 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2" }
+      + Add Parameter
+
+- elsif params[:tab] == "request"
+  #request-tab
+    %h4.text-lg.font-medium.mb-6 Request Body
+    #request-body-list.space-y-4{ data: { manual_editor_target: "requestBodyContainer" } }
+    %button{ type: "button", data: { action: "manual-editor#addRequestBody" },
+             class: "mt-6 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2" }
+      + Add Request Body

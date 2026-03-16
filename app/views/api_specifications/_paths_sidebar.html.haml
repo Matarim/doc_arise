@@ -1,0 +1,14 @@
+- if revision
+  .bg-zinc-950.border.border-zinc-700.rounded-3xl.p-6.h-full
+    %h3.text-lg.font-semibold.mb-6
+      Endpoints (#{@revision.endpoints.count})
+    .space-y-2.overflow-y-auto{ class: "max-h-[600px]"}
+      - @revision.endpoints.order(:path).each do |endpoint|
+        .flex.items-center.gap-4.px-4.py-3.bg-zinc-900.hover:bg-zinc-800.rounded-2xl.cursor-pointer.transition-colors
+          %span.method-badge.px-3.py-1.text-xs.font-mono.rounded-xl{class: "bg-#{endpoint.method == 'GET' ? 'emerald' : endpoint.method == 'POST' ? 'blue' : 'violet'}-900 text-#{endpoint.method == 'GET' ? 'emerald' : endpoint.method == 'POST' ? 'blue' : 'violet'}-300"}
+            = endpoint.method
+          %span.font-mono.flex-1.truncate
+            = endpoint.path
+- else
+  .text-zinc-500.text-center.py-12 No endpoints exist yet.
+

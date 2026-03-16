@@ -1,0 +1,23 @@
+.flex.mt-10.items-center.justify-center.bg-zinc-950
+  .max-w-8xl.w-full
+    .bg-zinc-900.border.border-zinc-800.rounded-3xl.shadow-2xl.p-10
+      %h1.text-4xl.font-bold.text-center.mb-8.tracking-tight
+        Editing Revision ##{@api_revision.revision_number}
+
+      %p.text-center.text-zinc-400.mb-10
+        For specification:
+        %strong= @api_specification.name
+
+      .flex.border-b.border-zinc-700.mb-8
+        %button.px-8.py-4.font-medium.transition-colors{ class: @mode == "manual" ? "border-b-2 border-emerald-500 text-emerald-400" : "text-zinc-400 hover:text-zinc-200",
+          data: { controller: 'tab', action: "click->tab#switch", tab_target: "tab", tab_form_value: "manual" }
+        } Manual Entry
+        %button.px-8.py-4.font-medium.transition-colors{ class: @mode == "upload" ? "border-b-2 border-emerald-500 text-emerald-400" : "text-zinc-400 hover:text-zinc-200",
+          data: { controller: 'tab', action: "click->tab#switch", tab_target: "tab", tab_form_value: "upload" }
+        } Upload OpenAPI File
+
+      %turbo-frame#revision-form
+        - if @mode == "upload"
+          = render "upload_form", api_revision: @api_revision
+        - else
+          = render "manual_form", api_revision: @api_revision

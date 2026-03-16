@@ -1,0 +1,58 @@
+.security-scheme-row.bg-zinc-950.border.border-zinc-700.rounded-2xl.p-6.flex.flex-col.gap-4
+  .grid.grid-cols-12.gap-2
+    .col-span-5.flex.items-center.gap-4
+      .flex.items-center.gap-2
+        = f.check_box "security_schemes[][required]", class: "w-4 h-4 accent-emerald-500"
+        %span.text-sm Required (global)
+    .col-span-7.flex.justify-end.mt-2
+      %button{ type: "button", data: { action: "manual-editor#removeSecurityScheme" },
+               class: "text-red-400 hover:text-red-300 cursor-pointer" }
+        Remove
+  .grid.grid-cols-12.gap-2
+    .col-span-6
+      = f.text_field "security_schemes[][name]", placeholder: "OAuth2Auth",
+                     class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono"
+    .col-span-6
+      = f.select "security_schemes[][type]", %w[apiKey http oauth2 openIdConnect], {},
+                 class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white cursor-pointer",
+                 data: { action: "change->manual-editor#updateSecurityType" }
+
+  / Conditional fields
+  .apiKey-group.hidden.grid.grid-cols-12.gap-2.mt-2
+    .col-span-6
+      = f.select "security_schemes[][in_location]", %w[header query cookie], { prompt: "In" },
+                 class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white"
+    .col-span-6
+      = f.text_field "security_schemes[][param_name]", placeholder: "Authorization",
+                     class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono"
+
+  .http-group.hidden.grid.grid-cols-12.gap-2.mt-2
+    .col-span-6
+      = f.select "security_schemes[][scheme]", %w[bearer basic digest], { prompt: "Scheme" },
+                 class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white"
+    .col-span-6
+      = f.text_field "security_schemes[][bearer_format]", placeholder: "JWT",
+                     class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono"
+
+  .oauth2-group.hidden.grid.grid-cols-12.gap-2.mt-2
+    .col-span-12
+      = f.text_field "security_schemes[][authorization_url]", placeholder: "https://auth.example.com/authorize",
+                     class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white"
+    .col-span-6
+      = f.text_field "security_schemes[][token_url]", placeholder: "https://auth.example.com/token",
+                     class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white"
+    .col-span-6
+      = f.text_field "security_schemes[][refresh_url]", placeholder: "https://auth.example.com/refresh",
+                     class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white"
+    .col-span-12.mt-2
+      = f.text_area "security_schemes[][scopes]", placeholder: '{"read": "Read access", "write": "Write access"}',
+                    rows: 3,
+                    class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono text-sm resize-y"
+
+  .gap-2.mt-4
+    = f.text_field "security_schemes[][description]", placeholder: "Description of this security scheme",
+                   class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white"
+
+  .gap-2
+    = f.text_field "security_schemes[][example]", placeholder: "Example token value",
+                   class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white"

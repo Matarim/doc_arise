@@ -1,0 +1,50 @@
+%turbo-frame#auth_form{ data: { controller: "auth", auth_target: "frame" } }
+  .bg-zinc-900.border.border-zinc-800.rounded-3xl.shadow-2xl.p-10.max-w-lg.mx-auto.mt-20
+    %h1.text-4xl.font-bold.text-center.mb-8.tracking-tight Sign up for DocArise
+
+    - if flash[:alert]
+      .bg-red-900.border.border-red-700.text-red-200.px-5.py-3.rounded-2xl.mb-6.text-sm= flash[:alert]
+
+    = form_with model: @user, url: sign_up_path, class: "space-y-6" do |f|
+      .grid.grid-cols-2.gap-6
+        .space-y-2
+          = f.label :first_name, "First Name", class: "block text-sm font-medium text-zinc-400"
+          = f.text_field :first_name, class: "w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-500 text-white"
+
+        .space-y-2
+          = f.label :last_name, "Last Name", class: "block text-sm font-medium text-zinc-400"
+          = f.text_field :last_name, class: "w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-500 text-white"
+
+      .space-y-2
+        = f.label :email_address, "Email address", class: "block text-sm font-medium text-zinc-400"
+        = f.email_field :email_address, class: "w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-500 text-white"
+
+      .grid.grid-cols-2.gap-6
+        .space-y-2
+          = f.label :password, "Password", class: "block text-sm font-medium text-zinc-400"
+          = f.password_field :password, class: "w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-500 text-white"
+
+        .space-y-2
+          = f.label :password_confirmation, "Confirm password", class: "block text-sm font-medium text-zinc-400"
+          = f.password_field :password_confirmation, class: "w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-500 text-white"
+
+      .flex.items-center.gap-3.mt-4
+        = f.check_box :accept_terms, class: "w-5 h-5 accent-blue-500"
+        %span.text-sm.text-zinc-400 I agree to the Terms and Privacy Policy
+
+      = f.submit "Create account", class: "w-full bg-emerald-600 hover:bg-emerald-700 py-4 rounded-2xl font-semibold text-white mt-6 transition-all"
+
+    .my-8.border-t.border-zinc-800.relative
+      .absolute.px-6.text-xs.text-zinc-500{ class: "left-1/2 -translate-x-1/2 bg-zinc-900" }
+        OR
+
+    .grid.grid-cols-2.gap-4
+      = link_to "/auth/google_oauth2", method: :post, class: "flex items-center justify-center gap-3 bg-white text-black font-medium py-4 rounded-2xl hover:bg-zinc-100" do
+        Google
+      = link_to "/auth/entra_id", method: :post, class: "flex items-center justify-center gap-3 bg-[#00A4EF] text-white font-medium py-4 rounded-2xl hover:bg-[#0088CC]" do
+        Microsoft
+
+    .text-center.mt-10.text-sm
+      Already have an account?
+      %button{ data: { action: "auth#switchToSignIn" }, class: "text-blue-400 hover:underline font-medium cursor-pointer" }
+        Sign in

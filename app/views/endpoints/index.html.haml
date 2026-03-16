@@ -1,0 +1,44 @@
+%div
+  .max-w-7xl.mx-auto
+    .flex.justify-between.items-center.mb-10
+      %div
+        %h1.text-4xl.font-bold.tracking-tighter Endpoint Explorer
+        %p.text-zinc-400
+          #{@api_revision.api_specification.name} • Revision ##{@api_revision.revision_number}
+
+      .flex.gap-4
+        = form_with url: api_revision_endpoints_path(@api_revision), method: :get, class: "flex gap-3" do |f|
+          = f.text_field :q, value: params[:q], placeholder: "Search paths or operationId...",
+                          class: "bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 w-80 focus:outline-none focus:border-blue-500"
+          = f.select :method, ["", "GET", "POST", "PUT", "PATCH", "DELETE"], { include_blank: "All Methods" },
+                     class: "bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-blue-500"
+
+    / Stats
+    .flex.gap-6.mb-8.text-sm
+      %div.bg-zinc-900.border.border-zinc-800.rounded-3xl.px-6.py-3
+        Total Endpoints: <strong class="text-blue-400">#{@endpoints.count}</strong>
+
+    / Endpoints Table
+    .bg-zinc-900.border.border-zinc-800.rounded-3xl.overflow-hidden
+      %table.w-full
+        %thead
+          %tr.border-b.border-zinc-700
+            %th.px-8.py-5.text-left.text-xs.font-medium.text-zinc-500 Method
+            %th.px-8.py-5.text-left.text-xs.font-medium.text-zinc-500 Path
+            %th.px-8.py-5.text-left.text-xs.font-medium.text-zinc-500 Operation ID
+            %th.px-8.py-5.text-left.text-xs.font-medium.text-zinc-500 Summary
+            %th.px-8.py-5.text-right.text-xs.font-medium.text-zinc-500 Actions
+
+        %tbody.divide-y.divide-zinc-800
+          - @endpoints.each do |endpoint|
+            %tr.hover:bg-zinc-800.transition-colors.group
+              %td.px-8.py-5
+                %span.px-3.py-1.text-xs.font-mono.rounded-full{class: method_badge_class(endpoint.method)}= endpoint.method.upcase
+              %td.px-8.py-5.font-mono.text-sm= endpoint.path
+              %td.px-8.py-5.text-zinc-400.font-medium= endpoint.operation_id || "—"
+              %td.px-8.py-5.text-zinc-300.line-clamp-1= endpoint.summary || endpoint.description || "—"
+              %td.px-8.py-5.text-right
+                = link_to api_revision_endpoint_path(@api_revision, endpoint),
+                          class: "text-blue-400 hover:text-blue-500 font-medium flex items-center gap-1 text-sm" do
+                  Details
+                  %span.text-lg →

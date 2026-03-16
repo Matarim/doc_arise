@@ -1,0 +1,55 @@
+.request-body-property-row.bg-zinc-950.border.border-zinc-700.rounded-2xl.p-6.flex.flex-col.gap-4
+  .grid.grid-cols-12.gap-2
+    .col-span-5.flex.items-center.gap-4
+      .flex.items-center.gap-2
+        = f.check_box "request_body_properties[][required]", class: "w-4 h-4 accent-emerald-500"
+        %span.text-sm Required
+      .flex.items-center.gap-2
+        = f.check_box "request_body_properties[][nullable]", class: "w-4 h-4 accent-emerald-500"
+        %span.text-sm Nullable
+    .col-span-7.flex.justify-end.mt-2
+      %button{ type: "button", data: { action: "manual-editor#removeRequestBody" },
+               class: "text-red-400 hover:text-red-300 cursor-pointer" }
+        Remove
+  .grid.grid-cols-12.gap-2
+    .col-span-6
+      = f.text_field "request_body_properties[][name]", placeholder: "property_name",
+                     class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono"
+    .col-span-6
+      = f.select "request_body_properties[][type]", %w[string integer number boolean array object enum dictionary], {},
+                 class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white cursor-pointer",
+                 data: { action: "change->manual-editor#updatePropertyType" }
+  .grid.grid-cols-12.gap-2
+    .col-span-6
+      = f.select "request_body_properties[][format]", %w[date-time date time email byte uuid uri hostname ipv4 ipv6 password int32 int64 float double regex], { prompt: "Select Format" },
+                 class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white", style: "box-sizing: border-box;"
+    .col-span-6
+      = f.text_field "request_body_properties[][default]", placeholder: "Default value (optional)",
+                     class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white"
+
+  / Conditional validation fields
+  .string-group.grid.grid-cols-12.gap-2
+    .col-span-4
+      = f.number_field "request_body_properties[][min_length]", placeholder: "minLength",
+                     class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white"
+    .col-span-4
+      = f.number_field "request_body_properties[][max_length]", placeholder: "maxLength",
+                     class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white"
+    .col-span-4
+      = f.text_field "request_body_properties[][pattern]", placeholder: "^[A-Z0-9]+$",
+                     class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono text-sm"
+
+  .number-group.hidden.grid.grid-cols-12.gap-2
+    .col-span-6
+      = f.number_field "request_body_properties[][minimum]", placeholder: "minimum",
+                     class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white"
+    .col-span-6
+      = f.number_field "request_body_properties[][maximum]", placeholder: "maximum",
+                     class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white"
+
+  .gap-2
+    = f.text_field "request_body_properties[][description]", placeholder: "Description of this property",
+                   class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white"
+  .gap-2
+    = f.text_field "request_body_properties[][example]", placeholder: "Example value for this property",
+                   class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white"
