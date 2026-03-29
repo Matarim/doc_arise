@@ -3,6 +3,7 @@ class CreateApiSpecifications < ActiveRecord::Migration[8.1]
     create_table :api_specifications, id: :uuid do |t|
       t.references :project, null: false, foreign_key: true, type: :uuid
       t.string :name
+      t.string :openapi_version, null: true
       t.text :description
       t.boolean :default
       t.references :created_by, type: :uuid, foreign_key: { to_table: :users }

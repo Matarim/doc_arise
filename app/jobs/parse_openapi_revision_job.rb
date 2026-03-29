@@ -3,66 +3,73 @@
 class ParseOpenapiRevisionJob < ApplicationJob
   queue_as :default
 
-  def perform(revision_id)
-    revision = ApiRevision.find(revision_id)
+  def perform(api_revision_id)
+    revision = ApiRevision.find(api_revision_id)
     return unless revision.content.present?
 
-    data = revision.content
+    Rails.logger.info "🔄 Starting parse for revision ##{revision.revision_number} (ID: #{revision.id})"
 
+    openapi = revision.content.is_a?(String) ? JSON.parse(revision.content) : revision.content
+    openapi = openapi.deep_symbolize_keys
+
+    # Clean old data
     revision.endpoints.destroy_all
     revision.schemas.destroy_all
     revision.security_schemes.destroy_all
 
-    (data['paths'] || {}).each do |path, methods|
-      methods.each do |method_name, operation|
-        next unless operation.is_a?(Hash)
-
-        endpoint = revision.endpoints.create!(
-          path:         path,
-          method:       method_name.downcase,
-          operation_id: operation['operationId'],
-          summary:      operation['summary'],
-          description:  operation['description'],
-          deprecated:   operation['deprecated'] || false,
-          security:     operation['security']
+    # === PATHS → ENDPOINTS ===
+    (openapi[:paths] || {}).each do |path, operations|
+      operations.each do |method, op|
+        endpoint = Endpoint.create!(
+          api_revision_id: revision.id,
+          path:            path.to_s,
+          method:          method.to_s.upcase,
+          summary:         op[:summary],
+          description:     op[:description],
+          operation_id:    op[:operationId],
+          deprecated:      op[:deprecated] || false,
+          request_body:    op[:requestBody] || {},
+          security:        op[:security] || [],
+          version:         revision.version
         )
 
-        (operation['parameters'] || []).each do |param|
+        # Parameters
+        (op[:parameters] || []).each do |p|
           endpoint.parameters.create!(
-            name:        param['name'],
-            in_location: param['in'],
-            required:    param['required'] || false,
-            description: param['description'],
-            schema:      param['schema']
+            name:        p[:name],
+            in_location: p[:in],
+            required:    p[:required] || false,
+            schema:      p[:schema] || {},
+            description: p[:description],
+            example:     p[:example]
           )
         end
 
-        (operation['responses'] || {}).each do |status_code, response|
+        # Responses
+        (op[:responses] || {}).each do |status, resp|
           endpoint.responses.create!(
-            status_code: status_code,
-            description: response['description'],
-            content:     response['content']
+            status_code: status.to_s,
+            description: resp[:description],
+            content:     resp[:content] || {}
           )
         end
       end
     end
 
-    (data.dig('components', 'schemas') || {}).each do |name, schema|
-      revision.schemas.create!(
-        name:        name,
-        description: schema['description'],
-        schema:      schema
-      )
+    # === COMPONENTS ===
+    if openapi.dig(:components, :securitySchemes)
+      openapi[:components][:securitySchemes].each do |name, scheme|
+        revision.security_schemes.create!(
+          name: name.to_s,
+          scheme: scheme,
+          description: scheme[:description]
+        )
+      end
     end
 
-    (data.dig('components', 'securitySchemes') || {}).each do |name, scheme|
-      revision.security_schemes.create!(
-        name:        name,
-        description: scheme['description'],
-        scheme:      scheme
-      )
-    end
-
-    revision.update_columns(parsed_at: Time.current)
+    Rails.logger.info "✅ Parse complete! #{revision.endpoints.count} endpoints created for revision ##{revision.revision_number}"
+  rescue => e
+    Rails.logger.error "❌ Parse failed for revision #{api_revision_id}: #{e.message}"
+    raise
   end
 end

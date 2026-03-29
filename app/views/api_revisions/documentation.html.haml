@@ -1,77 +1,23 @@
-%div
-  .max-w-7xl.mx-auto
-    .flex.justify-between.items-center.mb-10
-      %div
-        %h1.text-4xl.font-bold.tracking-tighter Documentation
-        %p.text-zinc-400
-          #{@api_revision.api_specification.name} • Revision ##{@api_revision.revision_number}
+.max-w-7xl.mx-auto.p-8
+  - if @api_revision.endpoints.any?
+    .space-y-12
+      - @api_revision.endpoints.order(:path, :method).each do |ep|
+        .bg-zinc-900.border.border-zinc-700.rounded-3xl.p-8{ id: "endpoint-#{ep.id}" }
+          %h3.flex.items-center.gap-3.text-2xl.font-semibold
+            %span.method-badge.bg-emerald-900.text-emerald-300.px-4.py-1.text-sm.font-mono
+              = ep.method
+            %span.font-mono
+              = ep.path
+            - if ep.deprecated
+              %span.px-3.py-1.text-xs.bg-red-900.text-red-300.rounded-full Deprecated
+          %p.text-zinc-400.mt-2
+            = ep.summary
+          %p.text-zinc-500
+            = ep.description.presence || "No description"
 
-      .flex.gap-3
-        = link_to api_revision_endpoints_path(@api_revision), class: "px-6 py-3 border border-zinc-700 rounded-2xl hover:bg-zinc-800" do
-          Endpoints
-        = link_to api_revision_schemas_path(@api_revision), class: "px-6 py-3 border border-zinc-700 rounded-2xl hover:bg-zinc-800" do
-          Schemas
-
-    .grid.grid-cols-12.gap-8
-      / Left Sidebar - Navigation
-      .col-span-3
-        .sticky.top-8
-          .bg-zinc-900.border.border-zinc-800.rounded-3xl.p-6
-            %h3.text-xs.uppercase.tracking-widest.text-zinc-500.mb-4 Paths
-            .max-h-96.overflow-y-auto.space-y-1
-              - @api_revision.endpoints.order(:path).each do |ep|
-                = link_to api_revision_endpoint_path(@api_revision, ep),
-                          class: "block px-4 py-2.5 text-sm hover:bg-zinc-800 rounded-2xl #{current_page?(api_revision_endpoint_path(@api_revision, ep)) ? 'bg-zinc-800' : ''}" do
-                  %span{class: method_badge_class(ep.method)}= ep.method.upcase
-                  %span.ml-3.font-mono= ep.path
-
-      / Main Content Area
-      .col-span-9
-        .bg-zinc-900.border.border-zinc-800.rounded-3xl.p-10
-          %h2.text-2xl.font-semibold.mb-8 Endpoints
-
-          .space-y-8
-            - @api_revision.endpoints.order(:path).each do |endpoint|
-              .border.border-zinc-700.rounded-3xl.overflow-hidden
-                .bg-zinc-950.px-8.py-5.flex.items-center.gap-4
-                  %span.px-5.py-1.text-sm.font-mono.rounded-2xl{class: method_badge_class(endpoint.method)}= endpoint.method.upcase
-                  %span.font-mono.text-lg= endpoint.path
-                  - if endpoint.operation_id
-                    %span.text-xs.text-zinc-500.ml-auto= endpoint.operation_id
-
-                .p-8
-                  - if endpoint.summary.present?
-                    %p.text-xl.text-zinc-200.mb-4= endpoint.summary
-                  - if endpoint.description.present?
-                    %p.text-zinc-400.mb-8= endpoint.description
-
-                  / Parameters & Responses in tabs (simple version)
-                  .flex.gap-8
-                    .flex-1
-                      %h4.text-sm.font-medium.text-zinc-400.mb-3 Parameters
-                      - if endpoint.parameters.any?
-                        .space-y-3
-                          - endpoint.parameters.each do |p|
-                            .flex.justify-between.text-sm
-                              %span.font-mono.text-blue-400= p.name
-                              %span.text-zinc-500= p.in_location
-                      - else
-                        %p.text-xs.text-zinc-500 No parameters
-
-                    .flex-1
-                      %h4.text-sm.font-medium.text-zinc-400.mb-3 Responses
-                      - endpoint.responses.each do |r|
-                        .flex.gap-4.text-sm.mb-2
-                          %span.font-mono.w-12= r.status_code
-                          %span.text-zinc-400= r.description
-
-      / Right Sidebar - Schemas
-      .col-span-3
-        .sticky.top-8
-          .bg-zinc-900.border.border-zinc-800.rounded-3xl.p-6
-            %h3.text-xs.uppercase.tracking-widest.text-zinc-500.mb-4 Schemas
-            .max-h-96.overflow-y-auto.space-y-px
-              - @api_revision.schemas.order(:name).each do |schema|
-                = link_to api_revision_schema_path(@api_revision, schema),
-                          class: "block px-4 py-3 hover:bg-zinc-800 rounded-2xl text-sm" do
-                  %span.font-mono= schema.name
+          = render "api_revisions/endpoint_details", endpoint: ep
+  - else
+    .text-center.py-20
+      %div.mx-auto.w-20.h-20.bg-zinc-800.rounded-3xl.flex.items-center.justify-center.mb-6.text-4xl
+        📋
+      %p.text-zinc-400.text-xl No endpoints yet

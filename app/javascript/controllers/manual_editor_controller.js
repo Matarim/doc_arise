@@ -1,19 +1,27 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["parametersContainer", "requestBodyContainer", "responsesContainer",
-    "securityContainer", "preview", "contentField", "existingContent"]
+  static targets = [
+    "pathsList", "parametersContainer", "requestBodyContainer",
+    "responsesContainer", "securityContainer", "preview",
+    "contentField", "existingContent", "openapiVersion"
+  ]
 
   pathsData = {}
   currentPathKey = null
 
   connect() {
-    this.addInitialPath()
     this.switchToTab("parameters")
     setTimeout(() => this.updatePreview(), 200)
 
     if (this.hasExistingContentTarget && this.existingContentTarget.value) {
-      this.loadExistingRevision(JSON.parse(this.existingContentTarget.value))
+      let openapi = { paths: {} }
+      let raw = this.existingContentTarget.value.trim()
+      if (raw.startsWith('"') && raw.endsWith('"')) {
+        raw = JSON.parse(raw)
+      }
+      openapi = typeof raw === "string" ? JSON.parse(raw) : raw
+      this.loadExistingRevision(openapi)
     }
   }
 
@@ -48,21 +56,49 @@ export default class extends Controller {
   saveCurrentPathState() {
     if (!this.currentPathKey) return
     this.pathsData[this.currentPathKey] = {
+      summary: this.getOperationSummary(),
+      description: this.getOperationDescription(),
+      operationId: this.getOperationId(),
+      tags: this.getTags(),
+      deprecated: this.isDeprecated(),
       parameters: this.collectParameters(),
       requestBody: this.collectRequestBody(),
       responses: this.collectResponses()
     }
   }
 
+  getOperationSummary() { return document.getElementById("operation-summary")?.value?.trim() || "" }
+  getOperationDescription() { return document.getElementById("operation-description")?.value?.trim() || "" }
+  getOperationId() {
+    const idField = document.getElementById("operation-id")
+    return idField?.value?.trim() || this.generateOperationId()
+  }
+  generateOperationId() {
+    const [method, path] = this.currentPathKey.split(" ")
+    return `${method.toLowerCase()}${path.replace(/[^a-zA-Z0-9]/g, "")}`
+  }
+  getTags() { return (document.getElementById("operation-tags")?.value || "").split(",").map(t => t.trim()).filter(Boolean) }
+  isDeprecated() { return document.getElementById("operation-deprecated")?.checked || false }
+
+
+  // ====================== LOAD / PRE-FILL ======================
   loadPathState(key) {
     const data = this.pathsData[key] || {}
-    this.parametersContainerTarget.innerHTML = ""
-    this.requestBodyContainerTarget.innerHTML = ""
-    this.responsesContainerTarget.innerHTML = ""
+    this.parametersContainerTarget.innerHTML = "";
+    this.requestBodyContainerTarget.innerHTML = "";
+    this.responsesContainerTarget.innerHTML = "";
 
-    if (data.parameters) data.parameters.forEach(p => this.addParameterFromData(p))
+    (data.parameters || []).forEach(p => this.addParameterFromData(p))
     if (data.requestBody) this.loadRequestBodyFromData(data.requestBody)
     if (data.responses) this.loadResponsesFromData(data.responses)
+
+    // operation metadata
+    document.getElementById("operation-summary").value = data.summary || ""
+    document.getElementById("operation-description").value = data.description || ""
+    document.getElementById("operation-id").value = data.operationId || ""
+    document.getElementById("operation-tags").value = (data.tags || []).join(", ")
+    document.getElementById("operation-deprecated").checked = !!data.deprecated
+    document.getElementById("spec-version").value = data.specVersion || "1.0.0"
   }
 
   updatePathName(event) {
@@ -86,9 +122,13 @@ export default class extends Controller {
       const keyToDelete = `${active.querySelector(".method-badge").textContent} ${active.querySelector(".path").textContent}`
       delete this.pathsData[keyToDelete]
       active.remove()
+
       const remaining = document.querySelector(".path-item")
-      if (remaining) this.selectPath({ currentTarget: remaining })
-      else this.currentPathKey = null
+      if (remaining) {
+        this.selectPath({ currentTarget: remaining })
+      } else {
+        this.currentPathKey = null
+      }
       this.updatePreview()
     }
   }
@@ -126,8 +166,37 @@ export default class extends Controller {
     this.updatePreview()
   }
 
+  updateParameterType(event) {
+    const row = event.target.closest(".parameter-row")
+    if (!row) return
+
+    const type = event.target.value
+    const stringGroup = row.querySelector(".string-group")
+    const numberGroup = row.querySelector(".number-group")
+
+    if (stringGroup) stringGroup.classList.toggle("hidden", !["string"].includes(type))
+    if (numberGroup) numberGroup.classList.toggle("hidden", !["number", "integer"].includes(type))
+    this.updatePreview()
+  }
+
   addParameterFromData(param) {
     const clone = document.getElementById("parameter-template").content.cloneNode(true)
+    const row = clone.querySelector(".parameter-row")
+    row.querySelector('input[name*="\\[name\\]"]').value = param.name || ""
+    row.querySelector('select[name*="\\[in_location\\]"]').value = param.in || "query"
+    row.querySelector('select[name*="\\[type\\]"]').value = param.schema?.type || "string"
+    row.querySelector('input[name*="\\[description\\]"]').value = param.description || ""
+    row.querySelector('input[name*="\\[example\\]"]').value = param.example || ""
+    row.querySelector('input[name*="\\[required\\]"]').checked = param.required || false
+    row.querySelector('input[name*="\\[nullable\\]"]').checked = param.schema?.nullable || false
+    row.querySelector('select[name*="\\[format\\]"]').value = param.schema?.format || ""
+    row.querySelector('input[name*="\\[min_length\\]"]').value = param.schema?.minLength || ""
+    row.querySelector('input[name*="\\[max_length\\]"]').value = param.schema?.maxLength || ""
+    row.querySelector('input[name*="\\[pattern\\]"]').value = param.schema?.pattern || ""
+    row.querySelector('input[name*="\\[minimum\\]"]').value = param.schema?.minimum || ""
+    row.querySelector('input[name*="\\[maximum\\]"]').value = param.schema?.maximum || ""
+    row.querySelector('input[name*="\\[default\\]"]').value = param.schema?.default || ""
+    // row.querySelector('input[name*="\\[allowEmptyValue\\]"]').checked = param.schema?.allowEmptyValue || false
     this.parametersContainerTarget.appendChild(clone)
   }
 
@@ -137,10 +206,21 @@ export default class extends Controller {
       const name = row.querySelector('input[name*="\\[name\\]"]')?.value?.trim()
       if (!name) return
       params.push({
-        name,
-        in: row.querySelector('select[name*="\\[in_location\\]"]')?.value || "query",
-        required: row.querySelector('input[type="checkbox"][name*="\\[required\\]"]')?.checked || false,
-        description: row.querySelector('input[name*="\\[description\\]"]')?.value || ""
+        name:        name,
+        in:          row.querySelector('select[name*="\\[in_location\\]"]')?.value || "query",
+        required:    row.querySelector('input[name*="\\[required\\]"]')?.checked || false,
+        schema: {
+          type:      row.querySelector('select[name*="\\[type\\]"]')?.value || "string",
+          format:    row.querySelector('select[name*="\\[format\\]"]')?.value,
+          default:   row.querySelector('input[name*="\\[default\\]"]')?.value,
+          minLength: row.querySelector('input[name*="\\[min_length\\]"]')?.value,
+          maxLength: row.querySelector('input[name*="\\[max_length\\]"]')?.value,
+          pattern:   row.querySelector('input[name*="\\[pattern\\]"]')?.value,
+          minimum:   row.querySelector('input[name*="\\[minimum\\]"]')?.value,
+          maximum:   row.querySelector('input[name*="\\[maximum\\]"]')?.value
+        },
+        description: row.querySelector('input[name*="\\[description\\]"]')?.value || "",
+        example:     row.querySelector('input[name*="\\[example\\]"]')?.value
       })
     })
     return params
@@ -262,8 +342,41 @@ export default class extends Controller {
     this.updatePreview()
   }
 
-  loadResponsesFromData(data) {
-    // placeholder – expand if needed
+  loadResponsesFromData(responses) {
+    Object.keys(responses).forEach(status => {
+      const resp = responses[status]
+      const clone = document.getElementById("response-template").content.cloneNode(true)
+      const row = clone.querySelector(".response-row")
+      row.querySelector('select[name*="status_code"]').value = status
+      row.querySelector('input[name*="\\[description\\]"]').value = resp.description || ""
+
+      const props = resp.content?.["application/json"]?.schema?.properties || {}
+      const required = resp.content?.["application/json"]?.schema?.required || []
+      Object.keys(props).forEach(name => {
+        this.addResponsePropertyFromData(row, name, props[name], required.includes(name))
+      })
+      this.responsesContainerTarget.appendChild(clone)
+    })
+  }
+
+  addResponsePropertyFromData(responseRow, name, prop, isRequired) {
+    const list = responseRow.querySelector(".response-properties-list")
+    if (!list) return
+    const clone = document.getElementById("response-property-template").content.cloneNode(true)
+    const row = clone.querySelector(".response-property-row")
+
+    row.querySelector('input[name*="\\[name\\]"]').value = name
+    row.querySelector('select[name*="\\[type\\]"]').value = prop.type || "string"
+    row.querySelector('input[name*="\\[description\\]"]').value = prop.description || ""
+    row.querySelector('input[name*="\\[example\\]"]').value = prop.example || ""
+    row.querySelector('input[name*="\\[required\\]"]').checked = isRequired
+    row.querySelector('input[name*="\\[nullable\\]"]').checked = prop.nullable || false
+
+    // trigger type visibility
+    const typeSelect = row.querySelector('select[name*="\\[type\\]"]')
+    if (typeSelect) this.updatePropertyType({ target: typeSelect })
+
+    list.appendChild(clone)
   }
 
   collectResponses() {
@@ -322,6 +435,18 @@ export default class extends Controller {
     if (type === "apiKey") row.querySelector(".apiKey-group").classList.remove("hidden")
     if (type === "http") row.querySelector(".http-group").classList.remove("hidden")
     if (type === "oauth2") row.querySelector(".oauth2-group").classList.remove("hidden")
+  }
+
+  collectSecuritySchemes() {
+    const schemes = {}
+    this.securityContainerTarget?.querySelectorAll(".security-scheme-row").forEach(row => {
+      const name = row.querySelector('input[name*="\\[name\\]"]')?.value?.trim()
+      if (!name) return
+
+      const scheme = this.buildSecurityScheme(row)
+      if (scheme) schemes[name] = scheme
+    })
+    return Object.keys(schemes).length ? schemes : undefined
   }
 
   // ====================== PROPERTY TYPE ======================
@@ -421,44 +546,55 @@ export default class extends Controller {
   // ====================== SUBMIT + SERIALIZER ======================
   handleSubmit(event) {
     event.preventDefault()
-    this.saveCurrentPathState()
+
+    this.rebuildPathsFromDOM()
 
     const openapiDoc = this.serializeToOpenAPI()
-    this.contentFieldTarget.value = JSON.stringify(openapiDoc)
+    this.contentFieldTarget.value = JSON.stringify(openapiDoc, null, 2)
 
     this.element.requestSubmit()
+  }
+
+  rebuildPathsFromDOM() {
+    this.pathsData = {}
+    document.querySelectorAll(".path-item").forEach(item => {
+      const method = item.querySelector(".method-badge").textContent
+      const path = item.querySelector(".path").textContent
+      const key = `${method} ${path}`
+      this.currentPathKey = key
+      this.saveCurrentPathState()
+    })
   }
 
   serializeToOpenAPI() {
     const paths = {}
     Object.keys(this.pathsData).forEach(key => {
       const [method, path] = key.split(" ", 2)
+      const data = this.pathsData[key]
       paths[path] = paths[path] || {}
       paths[path][method.toLowerCase()] = {
-        parameters: this.pathsData[key].parameters,
-        requestBody: this.pathsData[key].requestBody,
-        responses: this.pathsData[key].responses
+        summary: data.summary,
+        description: data.description,
+        operationId: data.operationId,
+        tags: data.tags.length ? data.tags : undefined,
+        deprecated: data.deprecated || undefined,
+        parameters: data.parameters,
+        requestBody: data.requestBody,
+        responses: data.responses
       }
     })
 
-    const securitySchemes = {}
-    this.securityContainerTarget?.querySelectorAll(".security-scheme-row").forEach(row => {
-      const name = row.querySelector('input[name*="\\[name\\]"]')?.value?.trim()
-      const scheme = this.buildSecurityScheme(row)
-      if (name && scheme) securitySchemes[name] = scheme
-    })
+    const version = document.getElementById("spec-version")?.value?.trim() || "1.0.0"
 
     return {
-      openapi: "3.1.0",
+      openapi: this.openapiVersionTarget?.value || "3.1.0",
       info: {
-        title: "API Specification",
-        version: "1.0.0",
-        description: "Generated via DocArise manual editor"
+        title: this.element.dataset.specName || "API Specification",
+        version: version,
+        description: this.element.dataset.specDescription || ""
       },
-      paths: paths,
-      components: {
-        securitySchemes: Object.keys(securitySchemes).length ? securitySchemes : undefined
-      }
+      paths,
+      components: { securitySchemes: this.collectSecuritySchemes() }
     }
   }
 
@@ -513,27 +649,31 @@ export default class extends Controller {
   // ====================== PRE-FILL ======================
   loadExistingRevision(openapi) {
     this.pathsData = {}
-    document.getElementById("paths-list").innerHTML = ""
+    const list = document.getElementById("paths-list")
+    if (list) list.innerHTML = ""
 
     const paths = openapi.paths || {}
+
     Object.keys(paths).forEach(path => {
       Object.keys(paths[path]).forEach(method => {
-        const key = `${method.toUpperCase()} ${path}`
+        const upperMethod = method.toUpperCase()
+        const key = `${upperMethod} ${path}`
         const op = paths[path][method]
 
-        this.addPathFromData(path, method.toUpperCase())
-
         this.pathsData[key] = {
-          parameters: op.parameters || [],
-          requestBody: op.requestBody || {},
-          responses: op.responses || {}
+          summary:      op.summary || "",
+          description:  op.description || "",
+          operationId:  op.operationId || "",
+          tags:         op.tags || [],
+          deprecated:   !!op.deprecated,
+          parameters:   op.parameters || [],
+          requestBody:  op.requestBody || {},
+          responses:    op.responses || {}
         }
+
+        this.addPathFromData(path, upperMethod)
       })
     })
-
-    if (openapi.components?.securitySchemes) {
-      this.loadSecuritySchemes(openapi.components.securitySchemes)
-    }
 
     const firstPath = document.querySelector(".path-item")
     if (firstPath) this.selectPath({ currentTarget: firstPath })
@@ -547,7 +687,10 @@ export default class extends Controller {
       <span class="path font-mono flex-1">${path}</span>
     `
     pathItem.dataset.action = "click->manual-editor#selectPath"
-    document.getElementById("paths-list").appendChild(pathItem)
+    const list = document.getElementById("paths-list")
+    if (list) {
+      list.appendChild(pathItem)
+    }
   }
 
   loadSecuritySchemes(schemes) {
@@ -558,6 +701,7 @@ export default class extends Controller {
   }
 
   // ====================== INITIAL ======================
+
   addInitialPath() {
     const firstPath = document.createElement("div")
     firstPath.className = "px-4 py-3 bg-zinc-700 rounded-2xl cursor-pointer flex items-center gap-3 path-item"
@@ -566,7 +710,7 @@ export default class extends Controller {
       <span class="path font-mono flex-1">/api/v1/example</span>
     `
     firstPath.dataset.action = "click->manual-editor#selectPath"
-    this.element.querySelector("#paths-list").appendChild(firstPath)
+    document.getElementById("paths-list").appendChild(firstPath)
     this.selectPath({ currentTarget: firstPath })
   }
 }

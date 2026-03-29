@@ -45,9 +45,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_12_125335) do
     t.datetime "published_at"
     t.integer "revision_number"
     t.datetime "updated_at", null: false
+    t.string "version", default: "1.0.0", null: false
     t.text "yaml_content"
     t.index ["api_specification_id", "is_published"], name: "index_api_revisions_on_api_specification_id_and_is_published"
     t.index ["api_specification_id", "revision_number"], name: "idx_on_api_specification_id_revision_number_e62c6f513d"
+    t.index ["api_specification_id", "version"], name: "index_api_revisions_on_api_specification_id_and_version"
     t.index ["api_specification_id"], name: "index_api_revisions_on_api_specification_id"
     t.index ["committed_by_id"], name: "index_api_revisions_on_committed_by_id"
     t.index ["content"], name: "index_api_revisions_on_content", using: :gin
@@ -62,6 +64,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_12_125335) do
     t.datetime "deleted_at"
     t.text "description"
     t.string "name"
+    t.string "openapi_version"
     t.uuid "project_id", null: false
     t.datetime "updated_at", null: false
     t.index ["created_by_id"], name: "index_api_specifications_on_created_by_id"
@@ -90,10 +93,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_12_125335) do
     t.string "method"
     t.string "operation_id"
     t.string "path"
+    t.jsonb "request_body"
     t.jsonb "security"
     t.text "summary"
     t.datetime "updated_at", null: false
+    t.string "version", default: "1.0.0", null: false
+    t.index ["api_revision_id", "version"], name: "index_endpoints_on_api_revision_id_and_version"
     t.index ["api_revision_id"], name: "index_endpoints_on_api_revision_id"
+    t.index ["request_body"], name: "index_endpoints_on_request_body", using: :gin
     t.index ["security"], name: "index_endpoints_on_security", using: :gin
   end
 

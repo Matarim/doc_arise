@@ -1,4 +1,4 @@
-.bg-zinc-900.border.border-zinc-800.rounded-3xl.overflow-hidden
+.bg-zinc-900.border.border-zinc-800.rounded-3xl.overflow-hidden{ data: { controller: "spec-mode" } }
   %table.w-full
     %thead
       %tr.border-b.border-zinc-700.bg-zinc-950
@@ -12,7 +12,9 @@
       - revisions.each do |rev|
         %tr.hover:bg-zinc-800.transition-colors.group
           %td.px-8.py-5.font-mono.text-blue-400.font-medium
-            "##{rev.revision_number}"
+            v#{rev.version}
+            %span{ class: "text-zinc-500 text-xs" }
+              = "##{rev.revision_number}"
 
           %td.px-8.py-5.text-zinc-300
             = rev.commit_message.presence || "—"
@@ -30,14 +32,9 @@
 
           %td.px-8.py-5.text-right
             .flex.items-center.justify-end.gap-4.text-sm
-              = link_to api_revision_endpoints_path(rev),
-                            class: "text-emerald-400 hover:text-emerald-500 font-medium flex items-center gap-1" do
-                Explore Endpoints
-              = link_to api_revision_schemas_path(rev),
-                          class: "text-purple-400 hover:text-purple-500 font-medium flex items-center gap-1" do
-                View Schemas
-              = link_to documentation_api_revision_path(rev),
+              = link_to documentation_project_api_specification_api_revision_path(@project, @api_specification, rev),
                           class: "text-blue-400 hover:text-blue-500 font-medium flex items-center gap-1" do
                 Full Docs →
-              = link_to "Edit", edit_project_api_specification_api_revision_path(@project, @api_specification, rev),
-                class: "text-emerald-400 hover:text-emerald-300"
+              = button_tag "Edit",
+                       class: "text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 cursor-pointer",
+                       data: { action: "click->spec-mode#enterEdit" }

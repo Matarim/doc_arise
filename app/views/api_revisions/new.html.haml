@@ -17,6 +17,6 @@
       / Tab Content Container
       %turbo-frame#revision-form
         - if @mode == "upload"
-          = render "upload_form", api_revision: @api_revision
+          = render "upload_form", project: @project, api_revision: @api_revision
         - else
-          = render "manual_form", api_revision: @api_revision
+          = render "manual_form", project: @project, api_revision: @api_revision

@@ -3,6 +3,7 @@ class CreateApiRevisions < ActiveRecord::Migration[8.1]
     create_table :api_revisions, id: :uuid do |t|
       t.references :api_specification, null: false, foreign_key: true, type: :uuid
       t.integer :revision_number
+      t.string :version, null: false, default: "1.0.0"
       t.jsonb :content
       t.text :yaml_content
       t.text :commit_message

@@ -1,14 +1,15 @@
 - if revision
-  .bg-zinc-950.border.border-zinc-700.rounded-3xl.p-6.h-full
-    %h3.text-lg.font-semibold.mb-6
-      Endpoints (#{@revision.endpoints.count})
-    .space-y-2.overflow-y-auto{ class: "max-h-[600px]"}
-      - @revision.endpoints.order(:path).each do |endpoint|
-        .flex.items-center.gap-4.px-4.py-3.bg-zinc-900.hover:bg-zinc-800.rounded-2xl.cursor-pointer.transition-colors
-          %span.method-badge.px-3.py-1.text-xs.font-mono.rounded-xl{class: "bg-#{endpoint.method == 'GET' ? 'emerald' : endpoint.method == 'POST' ? 'blue' : 'violet'}-900 text-#{endpoint.method == 'GET' ? 'emerald' : endpoint.method == 'POST' ? 'blue' : 'violet'}-300"}
-            = endpoint.method
-          %span.font-mono.flex-1.truncate
-            = endpoint.path
+  .bg-zinc-950.border.border-zinc-700.rounded-3xl.p-6.h-full.overflow-auto
+    %h4.text-lg.font-semibold.mb-4 Endpoints
+    - revision.endpoints.order(:path, :method).each do |ep|
+      = link_to documentation_project_api_specification_api_revision_path(@project, @api_specification, revision, endpoint_id: ep.id),
+                class: "block px-4 py-3 hover:bg-zinc-800 rounded-2xl mb-1 group flex items-center gap-3 transition-colors",
+                data: { turbo_frame: "documentation-frame" } do
+        %span.method-badge.bg-emerald-900.text-emerald-300.px-3.py-1.text-xs.font-mono.rounded
+          = ep.method
+        %span.font-mono.flex-1.truncate
+          = ep.path
+        %span.text-xs.text-zinc-500.ml-auto.opacity-0.group-hover:opacity-100
+          →
 - else
   .text-zinc-500.text-center.py-12 No endpoints exist yet.
-

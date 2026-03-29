@@ -5,6 +5,7 @@ class ApiSpecificationsController < ApplicationController
   before_action :set_project
   before_action :set_api_specification, only: [:show]
   before_action :set_selected_revision, only: [:show]
+  before_action :can_edit?
 
   def new
     @api_specification = ApiSpecification.new
@@ -22,7 +23,17 @@ class ApiSpecificationsController < ApplicationController
     end
   end
 
-  def show; end
+  def show
+    if params[:edit_mode] == 'true' && @can_edit
+      @editing_revision = @api_specification.ensure_draft_revision!(Current.user)
+      @project = @api_specification.project
+    else
+      @selected_revision = @api_specification.latest_published_revision
+      @selected_endpoint = @selected_revision&.endpoints&.order(:path, :method)&.first if @selected_revision
+    end
+
+    render :show
+  end
 
   private
 
@@ -35,10 +46,14 @@ class ApiSpecificationsController < ApplicationController
   end
 
   def set_selected_revision
-    @selected_revision = @api_specification.api_revisions.order(revision_number: :desc).first
+    # TODO: Implement a way to select a revision to review.
   end
 
   def api_specification_params
-    params.require(:api_specification).permit(:name, :description)
+    params.require(:api_specification).permit(:name, :description, :openapi_version)
+  end
+
+  def can_edit?
+    @can_edit = true
   end
 end

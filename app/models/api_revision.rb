@@ -12,6 +12,7 @@ class ApiRevision < ApplicationRecord
   has_many :security_schemes, dependent: :destroy
 
   validates :revision_number, presence: true, uniqueness: { scope: :api_specification_id }
+  validates :version,         presence: true
 
   scope :published, -> { where(is_published: true) }
   scope :latest,    -> { order(revision_number: :desc).first }

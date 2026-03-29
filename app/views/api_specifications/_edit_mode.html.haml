@@ -1,0 +1,11 @@
+.bg-zinc-950.border.border-zinc-700.rounded-3xl.p-8
+  .items-center.gap-3.justify-center.mb-6.text-center
+    %h3.text-2xl.font-semibold
+      Editing Draft Revision ##{revision.revision_number}
+    %span.text-emerald-400.text-sm.font-normal
+      (changes will be saved as new revision)
+
+  = render "api_revisions/manual_form",
+           api_revision: revision,
+           project: @project,
+           api_specification: @api_specification

@@ -1,36 +1,80 @@
 = form_with model: api_revision,
-            url: project_api_specification_api_revisions_path(@api_specification),
+            url: api_revision.persisted? ? project_api_specification_api_revision_path(project, api_specification, api_revision) : project_api_specification_api_revisions_path(project, api_specification),
+            method: api_revision.persisted? ? :patch : :post,
             class: "flex h-[calc(100vh-220px)] gap-8",
             data: { controller: "manual-editor" } do |f|
 
   / LEFT SIDEBAR – Paths List
-  .w-80.bg-zinc-950.border.border-zinc-700.rounded-3xl.p-6.flex.flex-col
+  .bg-zinc-950.border.border-zinc-700.rounded-3xl.p-6.flex.flex-col
     .flex.items-center.justify-between.mb-6
       %h3.text-lg.font-semibold
         Paths
       %button{ type: "button", data: { action: "manual-editor#addPath" },
-               class: "bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-2xl text-xl font-medium flex items-center justify-center cursor-pointer" }
+                 class: "bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-2xl text-xl font-medium flex items-center justify-center cursor-pointer" }
         +
-    #paths-list.flex-1.overflow-y-auto.space-y-1
+    #paths-list.flex-1.overflow-y-auto.space-y-1{ data: { manual_editor_target: "pathsList" } }
 
   / MAIN EDITOR
   .flex-1.flex.flex-col.bg-zinc-900.border.border-zinc-700.rounded-3xl
 
     / Selected Path Header
-    .border-b.border-zinc-700.px-8.py-6.flex.items-center.gap-6
-      .flex.items-center.gap-4.flex-1
-        = f.select :http_method, %w[GET POST PUT PATCH DELETE], { selected: "GET" },
-                   class: "bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-emerald-500 text-white font-mono cursor-pointer",
-                   data: { action: "change->manual-editor#updateMethod" }
-
-        -# %span#selected-method.method-badge.bg-emerald-900.text-emerald-300.px-4.py-1.text-sm.font-mono.rounded-xl GET
+    .border-b.border-zinc-700.px-8.py-8.flex.flex-col.gap-6
+      .grid.grid-cols-12.gap-6.flex.justify-between
+        .col-span-7.gap-2
+          = label_tag "operation-tags", "Tags", class: "block text-sm font-medium text-zinc-400 mb-2"
+          = text_field_tag "operation-tags", nil,
+                           placeholder: "Tags: users, profile, v1",
+                           class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono",
+                           id: "operation-tags"
+        .col-span-5.gap-2
+          = label_tag "spec_version", "Version", class: "block text-sm font-medium text-zinc-400 mb-2"
+          = text_field_tag "spec_version", nil,
+                           placeholder: "1.0.0",
+                           class: "custom-form-field w-28 bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono text-center",
+                           id: "spec-version"
+      .flex.items-center.gap-4
+        = select_tag "http_method", options_for_select(%w[GET POST PUT PATCH DELETE], "GET"),
+                     class: "bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-emerald-500 text-white font-mono cursor-pointer",
+                     data: { action: "change->manual-editor#updateMethod" }
 
         %span.font-mono.text-3xl.ml-3#selected-path{ contenteditable: true,
           data: { action: "blur->manual-editor#updatePathName" } } /api/v1/example
+        %button{ type: "button", data: { action: "manual-editor#removePath" },
+                 class: "ml-auto text-red-400 hover:text-red-300 text-sm font-medium cursor-pointer flex items-center gap-1" }
+          %span.text-2xl
+            ×
 
-      %button{ type: "button", data: { action: "manual-editor#removePath" },
-               class: "text-red-400 hover:text-red-300 text-sm font-medium cursor-pointer" }
-        Delete Path
+      .bg-zinc-950.border.border-zinc-700.rounded-2xl.p-6
+        .grid.grid-cols-12.gap-2
+          .col-span-5.flex.items-center.gap-4
+            %h5.text-xs.font-medium.tracking-widest.text-zinc-500.mb-4.uppercase Operation Metadata
+          .col-span-7.flex.justify-end.gap-2
+            = check_box_tag "operation-deprecated", "1", false,
+                              class: "w-5 h-5 accent-red-500",
+                              id: "operation-deprecated"
+            = label_tag "operation-deprecated", "Deprecated", class: "text-sm font-medium text-zinc-400 cursor-pointer"
+
+        .grid.grid-cols-12.gap-6
+          .col-span-5
+            = label_tag "operation-summary", "Summary", class: "block text-sm font-medium text-zinc-400 mb-2"
+            = text_field_tag "operation-summary", nil,
+                             placeholder: "Get user by ID",
+                             class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono",
+                             id: "operation-summary"
+
+          .col-span-5
+            = label_tag "operation-id", "Operation ID", class: "block text-sm font-medium text-zinc-400 mb-2"
+            = text_field_tag "operation-id", nil,
+                             placeholder: "getUserById",
+                             class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono",
+                             id: "operation-id"
+
+          .col-span-12
+            = label_tag "operation-description", "Description", class: "block text-sm font-medium text-zinc-400 mb-2"
+            = text_area_tag "operation-description", nil,
+                            placeholder: "Retrieves a user and returns full profile details...",
+                            class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono",
+                            id: "operation-description"
 
     / Sub-tabs (with cursor-pointer)
     .flex.border-b.border-zinc-700.px-8
@@ -86,13 +130,17 @@
     / Bottom Save
     .border-t.border-zinc-700.px-8.py-6.mt-auto.flex.gap-4
       = f.submit "Publish Changes",
-                     class: "flex-1 bg-emerald-600 hover:bg-emerald-700 py-5 rounded-3xl font-bold text-white text-lg transition-all cursor-pointer"
+                 params: { commit_draft: "false" },
+                 class: "flex-1 bg-emerald-600 hover:bg-emerald-700 py-5 rounded-3xl font-bold text-white text-lg transition-all cursor-pointer",
+                 data: { action: "click->manual-editor#handleSubmit" }
 
       = f.submit "Save as Draft",
-                     class: "flex-1 bg-zinc-700 hover:bg-zinc-600 py-5 rounded-3xl font-bold text-white text-lg transition-all cursor-pointer",
-                     name: "commit_draft"
+                 params: { commit_draft: "true" },
+                 class: "flex-1 bg-zinc-700 hover:bg-zinc-600 py-5 rounded-3xl font-bold text-white text-lg transition-all cursor-pointer",
+                 name: "commit_draft",
+                 data: { action: "click->manual-editor#handleSubmit" }
   / RIGHT: LIVE EXAMPLE COLUMN
-  .w-96.bg-zinc-950.border.border-zinc-700.rounded-3xl.flex.flex-col.overflow-hidden
+  .bg-zinc-950.border.border-zinc-700.rounded-3xl.flex.flex-col.overflow-hidden
     .flex.border-b.border-zinc-700.justify-between.items-center
       .p-6.flex.items-center.gap-2
         %h4.text-lg.font-semibold Example
@@ -105,11 +153,15 @@
       .text-zinc-500.italic.text-center.mt-20
         Add properties & examples to see live JSON
   = f.hidden_field :content, data: { manual_editor_target: "contentField" }
-  = f.hidden_field :parent_revision_id, value: @api_revision&.id   # ← forks correctly
+  = f.hidden_field :parent_revision_id, value: api_revision&.id
 
-  - if @api_revision&.persisted? && @api_revision.content.present?
-    = hidden_field_tag :existing_content, @api_revision.content.to_json,
+  - if api_revision&.content.present?
+    - content_json = api_revision.content.is_a?(String) ? api_revision.content : api_revision.content.to_json
+    = hidden_field_tag :existing_content, content_json,
                        data: { manual_editor_target: "existingContent" }
+
+  = hidden_field_tag :openapi_version, api_specification.openapi_version,
+                     data: { manual_editor_target: "openapiVersion" }
   / Templates
   %template#parameter-template
     = render partial: "api_revisions/parameter_field", locals: { f: f }

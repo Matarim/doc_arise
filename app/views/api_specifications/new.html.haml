@@ -14,4 +14,11 @@
           = f.label :description, "Description", class: "block text-sm font-medium text-zinc-400"
           = f.text_area :description, rows: 3, placeholder: "Main REST API for external developers", class: "w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-500 text-white"
 
+        .space-y-2
+          = f.label :openapi_version, "OpenAPI Version", class: "block text-sm font-medium text-zinc-400"
+          = f.select :openapi_version,
+                     options_for_select([%w[3.0.0 3.0.0], %w[3.0.1 3.0.1], %w[3.1.0 3.1.0]], "3.1.0"),
+                     { include_blank: "— Select version (optional)" },
+                     class: "w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-500 text-white cursor-pointer"
+
         = f.submit "Create API Specification", class: "w-full bg-emerald-600 hover:bg-emerald-700 py-4 rounded-2xl font-semibold text-white transition-all mt-6"

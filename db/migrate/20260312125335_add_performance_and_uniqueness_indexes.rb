@@ -35,5 +35,8 @@ class AddPerformanceAndUniquenessIndexes < ActiveRecord::Migration[8.1]
     # Fast revision queries
     add_index :api_revisions, [:api_specification_id, :revision_number]
     add_index :api_revisions, [:api_specification_id, :is_published]
+    add_index :api_revisions, [:api_specification_id, :version], unique: false
+    add_index :endpoints, [:api_revision_id, :version], unique: false
+    add_index :endpoints, :request_body, using: :gin
   end
 end
