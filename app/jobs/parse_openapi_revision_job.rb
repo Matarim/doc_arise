@@ -7,7 +7,7 @@ class ParseOpenapiRevisionJob < ApplicationJob
     revision = ApiRevision.find(api_revision_id)
     return unless revision.content.present?
 
-    Rails.logger.info "🔄 Starting parse for revision ##{revision.revision_number} (ID: #{revision.id})"
+    Rails.logger.info "Starting parse for revision ##{revision.revision_number} (ID: #{revision.id})"
 
     openapi = revision.content.is_a?(String) ? JSON.parse(revision.content) : revision.content
     openapi = openapi.deep_symbolize_keys
@@ -20,6 +20,9 @@ class ParseOpenapiRevisionJob < ApplicationJob
     # === PATHS → ENDPOINTS ===
     (openapi[:paths] || {}).each do |path, operations|
       operations.each do |method, op|
+        # File #8: use endpoint-level version from OpenAPI extension (falls back to spec version)
+        endpoint_version = op[:'x-docarise-endpoint-version'] || revision.version
+
         endpoint = Endpoint.create!(
           api_revision_id: revision.id,
           path:            path.to_s,
@@ -30,7 +33,7 @@ class ParseOpenapiRevisionJob < ApplicationJob
           deprecated:      op[:deprecated] || false,
           request_body:    op[:requestBody] || {},
           security:        op[:security] || [],
-          version:         revision.version
+          version:         endpoint_version
         )
 
         # Parameters
@@ -67,9 +70,9 @@ class ParseOpenapiRevisionJob < ApplicationJob
       end
     end
 
-    Rails.logger.info "✅ Parse complete! #{revision.endpoints.count} endpoints created for revision ##{revision.revision_number}"
+    Rails.logger.info "Parse complete! #{revision.endpoints.count} endpoints created for revision ##{revision.revision_number}"
   rescue => e
-    Rails.logger.error "❌ Parse failed for revision #{api_revision_id}: #{e.message}"
+    Rails.logger.error "Parse failed for revision #{api_revision_id}: #{e.message}"
     raise
   end
 end

@@ -1,4 +1,8 @@
 .bg-zinc-900.border.border-zinc-800.rounded-3xl.overflow-hidden{ data: { controller: "spec-mode" } }
+  .px-6.py-4.border-b.border-zinc-700.flex.items-center.justify-between
+    %h3.text-lg.font-medium Revisions – #{@branch}
+    = link_to "New Branch", "#", class: "text-xs font-medium text-emerald-400 hover:text-emerald-300", data: { controller: "new-branch", action: "click->new-branch#create" }
+
   %table.w-full
     %thead
       %tr.border-b.border-zinc-700.bg-zinc-950
@@ -9,7 +13,7 @@
         %th.px-8.py-5.text-right.text-xs.font-medium.text-zinc-500.uppercase.tracking-widest Actions
 
     %tbody.divide-y.divide-zinc-800
-      - revisions.each do |rev|
+      - @api_specification.api_revisions.for_branch(@branch).order(revision_number: :desc).each do |rev|
         %tr.hover:bg-zinc-800.transition-colors.group
           %td.px-8.py-5.font-mono.text-blue-400.font-medium
             v#{rev.version}
@@ -32,9 +36,10 @@
 
           %td.px-8.py-5.text-right
             .flex.items-center.justify-end.gap-4.text-sm
-              = link_to documentation_project_api_specification_api_revision_path(@project, @api_specification, rev),
+              = link_to documentation_project_api_specification_api_revision_path(@project, @api_specification, rev, branch: @branch),
                           class: "text-blue-400 hover:text-blue-500 font-medium flex items-center gap-1" do
                 Full Docs →
-              = button_tag "Edit",
-                       class: "text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 cursor-pointer",
-                       data: { action: "click->spec-mode#enterEdit" }
+              = link_to "Edit",
+                project_api_specification_path(@project, @api_specification, branch: @branch, edit_mode: "true"),
+                class: "text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 cursor-pointer",
+                data: { turbo_frame: "spec-content spec-mode-buttons" }

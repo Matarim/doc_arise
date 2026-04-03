@@ -1,5 +1,6 @@
 .max-w-8xl.mx-auto
   / HEADER (always visible)
+  -# .flex.justify-between.items-center.mb-10{ data: { controller: "spec-mode" } }
   .flex.justify-between.items-center.mb-10{ data: { controller: "spec-mode" } }
     .flex.items-center.gap-6
       %div
@@ -20,19 +21,23 @@
             - else
               %span.bg-amber-900.text-amber-300.p-2.rounded-full
                 Draft v#{@selected_revision.version}
-
-    .flex.gap-3
+    %div#spec-mode-buttons{ class: "flex gap-3" }
       - if @can_edit
-        = button_tag "Exit Edit Mode",
-                     class: "hidden px-6 py-3 bg-zinc-700 hover:bg-zinc-600 text-white rounded-2xl cursor-pointer",
-                     id: "exit-edit-mode",
-                     data: { action: "click->spec-mode#exitEdit" }
-        = button_tag "Edit Specification",
-                     class: "bg-emerald-600 hover:bg-emerald-700 px-8 py-3 rounded-3xl font-semibold text-white flex items-center gap-3 cursor-pointer",
-                     id: "enter-edit-mode",
-                     data: { action: "click->spec-mode#enterEdit" }
+        - if @editing_mode
+          .flex-col.items-end.gap-2.flex
+            = link_to "Exit Edit Mode",
+                      project_api_specification_path(@project, @api_specification, branch: @branch),
+                      class: "px-6 py-3 bg-zinc-700 hover:bg-zinc-600 text-white rounded-2xl cursor-pointer",
+                      data: { turbo_frame: "spec-content spec-mode-buttons" }
+            %p.text-amber-400.text-sm.font-medium
+              Editing draft on branch <span class="font-mono">#{@branch}</span> (forked from published ##{@editing_revision.parent_revision_id || '—'})
 
-      - unless params[:edit_mode] == "true"
+        - else
+          = link_to "Edit Specification",
+                    project_api_specification_path(@project, @api_specification, branch: @branch, edit_mode: "true"),
+                    class: "bg-emerald-600 hover:bg-emerald-700 px-8 py-3 rounded-3xl font-semibold text-white flex items-center gap-3 cursor-pointer",
+                    data: { turbo_frame: "spec-content spec-mode-buttons" }
+      - unless @editing_mode
         - if @selected_revision
           = link_to "Export JSON",
                     project_api_specification_api_revision_path(@project, @api_specification, @selected_revision, format: :json),
@@ -40,10 +45,10 @@
           = link_to "Export YAML",
                     project_api_specification_api_revision_path(@project, @api_specification, @selected_revision, format: :yaml),
                     class: "px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-2xl font-medium flex items-center gap-2"
-
+  = render "api_revisions/branch_selector"
   / MAIN CONTENT — Turbo Frame
-  = turbo_frame_tag "spec-content", class: "grid grid-cols-12 gap-8" do
-    - if params[:edit_mode] == "true"
+  %div#spec-content{ class: "grid grid-cols-12 gap-8" }
+    - if @editing_mode
       / Edit mode = full width (manual editor)
       .col-span-12
         = render "api_specifications/edit_mode", revision: @editing_revision

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_12_125335) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_29_215340) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -34,6 +34,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_12_125335) do
 
   create_table "api_revisions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "api_specification_id", null: false
+    t.string "branch", default: "main", null: false
     t.text "commit_message"
     t.uuid "committed_by_id"
     t.jsonb "content"
@@ -47,6 +48,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_12_125335) do
     t.datetime "updated_at", null: false
     t.string "version", default: "1.0.0", null: false
     t.text "yaml_content"
+    t.index ["api_specification_id", "branch", "revision_number"], name: "index_api_revisions_on_spec_branch_revision", unique: true
+    t.index ["api_specification_id", "branch"], name: "index_api_revisions_on_spec_and_branch"
     t.index ["api_specification_id", "is_published"], name: "index_api_revisions_on_api_specification_id_and_is_published"
     t.index ["api_specification_id", "revision_number"], name: "idx_on_api_specification_id_revision_number_e62c6f513d"
     t.index ["api_specification_id", "version"], name: "index_api_revisions_on_api_specification_id_and_version"

@@ -1,0 +1,6 @@
+.flex.items-center.gap-3.bg-zinc-950.border.border-zinc-700.rounded-3xl.px-5.py-2
+  %span.text-xs.font-medium.text-zinc-400.uppercase.tracking-widest Branch
+  = select_tag :branch,
+               options_for_select([%w[main main]] + @api_specification.api_revisions.select(:branch).distinct.pluck(:branch).map { |b| [b, b] }, @branch),
+               class: "bg-transparent border-0 text-white font-mono focus:outline-none cursor-pointer",
+               data: { action: "change->branch-selector#switchBranch" }

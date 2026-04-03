@@ -3,34 +3,36 @@
 class ApiRevisionsController < ApplicationController
   before_action :set_api_revision, only: %i[edit update documentation]
   before_action :set_api_specification
+  before_action :set_branch
 
   def new
-    @api_revision = @api_specification.api_revisions.build
+    @api_revision = @api_specification.api_revisions.build(branch: @branch)
     @mode = params[:mode] || 'manual'
   end
 
   def create
     @api_revision = @api_specification.api_revisions.build(revision_params)
+    @api_revision.branch = @branch
     @api_revision.committed_by = Current.user
     @api_revision.is_published = params[:commit_draft] != 'true'
-    @api_revision.revision_number = (@api_specification.api_revisions.maximum(:revision_number) || 0) + 1
+    @api_revision.revision_number = (@api_specification.api_revisions.for_branch(@branch).maximum(:revision_number) || 0) + 1
     @project = @api_specification.project
 
     if @api_revision.save
       ParseOpenapiRevisionJob.perform_later(@api_revision.id)
 
       notice = if @api_revision.is_published?
-                 "Revision ##{@api_revision.revision_number} (v#{@api_revision.version}) published."
+                 "Revision ##{@api_revision.revision_number} (v#{@api_revision.version}) published on branch #{@branch}."
                else
                  'Draft saved successfully.'
                end
 
       respond_to do |format|
         format.html do
-          redirect_to project_api_specification_path(@project, @api_specification), notice: notice
+          redirect_to project_api_specification_path(@project, @api_specification, branch: @branch), notice: notice
         end
         format.turbo_stream do
-          head :ok, location: project_api_specification_path(@project, @api_specification)
+          head :ok, location: project_api_specification_path(@project, @api_specification, branch: @branch)
         end
       end
     else
@@ -40,7 +42,7 @@ class ApiRevisionsController < ApplicationController
           render turbo_stream: turbo_stream.replace(
             'spec-content',
             partial: 'api_specifications/edit_mode',
-            locals: { revision: @api_revision, project: @project, api_specification: @api_specification }
+            locals:  { revision: @api_revision, project: @project, api_specification: @api_specification, branch: @branch }
           )
         end
         format.html { render :new }
@@ -50,6 +52,7 @@ class ApiRevisionsController < ApplicationController
 
   def update
     @api_revision.assign_attributes(revision_params)
+    @api_revision.branch = @branch
     @api_revision.committed_by = Current.user
     @api_revision.is_published = params[:commit_draft]
     @project = @api_specification.project
@@ -58,17 +61,17 @@ class ApiRevisionsController < ApplicationController
       ParseOpenapiRevisionJob.perform_later(@api_revision.id)
 
       notice = if @api_revision.is_published?
-                 "Revision ##{@api_revision.revision_number} (v#{@api_revision.version}) published."
+                 "Revision ##{@api_revision.revision_number} (v#{@api_revision.version}) published on branch #{@branch}."
                else
                  'Draft updated successfully.'
                end
 
       respond_to do |format|
         format.html do
-          redirect_to project_api_specification_path(@project, @api_specification), notice: notice
+          redirect_to project_api_specification_path(@project, @api_specification, branch: @branch), notice: notice
         end
         format.turbo_stream do
-          head :ok, location: project_api_specification_path(@project, @api_specification)
+          head :ok, location: project_api_specification_path(@project, @api_specification, branch: @branch)
         end
       end
     else
@@ -77,7 +80,7 @@ class ApiRevisionsController < ApplicationController
           render turbo_stream: turbo_stream.replace(
             'spec-content',
             partial: 'api_specifications/edit_mode',
-            locals: { revision: @api_revision, project: @project, api_specification: @api_specification }
+            locals:  { revision: @api_revision, project: @project, api_specification: @api_specification, branch: @branch }
           )
         end
       end
@@ -120,6 +123,10 @@ class ApiRevisionsController < ApplicationController
 
   def set_api_specification
     @api_specification = ApiSpecification.find(params[:api_specification_id])
+  end
+
+  def set_branch
+    @branch = params[:branch] || ApiRevision.default_branch
   end
 
   def revision_params

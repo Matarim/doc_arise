@@ -33,7 +33,7 @@ Rails.application.routes.draw do
   resources :projects, only: %i[new create show index] do
     resources :api_specifications, only: %i[new create show] do
       resources :api_revisions, only: %i[new create index edit show update] do
-        resources :endpoints, only: %i[index show]
+        resources :endpoints, only: %i[index show update]
         resources :schemas, only: %i[index show]
         get :documentation, on: :member
       end

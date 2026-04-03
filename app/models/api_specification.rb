@@ -13,14 +13,14 @@ class ApiSpecification < ApplicationRecord
   validates :default, uniqueness: { scope: :project_id }, if: :default?
   validates :openapi_version, inclusion: { in: %w[3.0.0 3.0.1 3.1.0] }, allow_nil: true
 
-  def latest_published_revision
-    api_revisions.where(is_published: true, deleted_at: nil)
+  def latest_published_revision_for_branch(branch)
+    api_revisions.where(branch: branch, is_published: true, deleted_at: nil)
                  .order(revision_number: :desc)
                  .first
   end
 
-  def ensure_draft_revision!(user)
-    candidate_draft = api_revisions.where(deleted_at: nil)
+  def ensure_draft_revision!(branch, user)
+    candidate_draft = api_revisions.where(branch: branch, deleted_at: nil)
                                    .where(is_published: [false, nil])
                                    .order(revision_number: :desc)
                                    .first
@@ -34,11 +34,9 @@ class ApiSpecification < ApplicationRecord
       end
     end
 
-    parent = api_revisions.where(is_published: true, deleted_at: nil)
-                          .order(revision_number: :desc)
-                          .first
+    parent = latest_published_revision_for_branch(branch)
 
-    next_number = (api_revisions.maximum(:revision_number) || 0) + 1
+    next_number = (api_revisions.for_branch(branch).maximum(:revision_number) || 0) + 1
     next_version = if parent&.version
                      parent.version.sub(/\d+$/) { |n| (n.to_i + 1).to_s }
                    else
@@ -63,6 +61,7 @@ class ApiSpecification < ApplicationRecord
       committed_by:       user,
       is_published:       false,
       is_draft:           true,
+      branch:             branch,
       content:            forked_content
     )
   end

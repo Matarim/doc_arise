@@ -5,6 +5,7 @@ class ApiSpecificationsController < ApplicationController
   before_action :set_project
   before_action :set_api_specification, only: [:show]
   before_action :set_selected_revision, only: [:show]
+  before_action :set_branch
   before_action :can_edit?
 
   def new
@@ -24,16 +25,46 @@ class ApiSpecificationsController < ApplicationController
   end
 
   def show
-    if params[:edit_mode] == 'true' && @can_edit
-      @editing_revision = @api_specification.ensure_draft_revision!(Current.user)
+    @branch = params[:branch] || ApiRevision.default_branch
+
+    if params[:revision].present?
+      @selected_revision = @api_specification.api_revisions.find_by(id: params[:revision])
+    elsif params[:edit_mode] == 'true' && @can_edit
+      @editing_mode = params[:edit_mode] == 'true'
+      @editing_revision = @api_specification.ensure_draft_revision!(@branch, Current.user)
       @project = @api_specification.project
     else
-      @selected_revision = @api_specification.latest_published_revision
+      @selected_revision = @api_specification.latest_published_revision_for_branch(@branch)
       @selected_endpoint = @selected_revision&.endpoints&.order(:path, :method)&.first if @selected_revision
     end
 
-    render :show
+    respond_to do |format|
+      format.html
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.update('spec-content', partial: 'api_specifications/spec_content'),
+          turbo_stream.update('spec-mode-buttons', partial: 'api_specifications/spec_buttons')
+        ]
+      end
+    end
   end
+
+  # def show
+  #   @branch = params[:branch] || ApiRevision.default_branch
+  #
+  #   if params[:revision].present?
+  #     @selected_revision = @api_specification.api_revisions.find_by(id: params[:revision])
+  #   elsif params[:edit_mode] == 'true' && @can_edit
+  #     @editing_mode = params[:edit_mode] == 'true'
+  #     @editing_revision = @api_specification.ensure_draft_revision!(@branch, Current.user)
+  #     @project = @api_specification.project
+  #   else
+  #     @selected_revision = @api_specification.latest_published_revision_for_branch(@branch)
+  #     @selected_endpoint = @selected_revision&.endpoints&.order(:path, :method)&.first if @selected_revision
+  #   end
+  #
+  #   # render :show
+  # end
 
   private
 
@@ -51,6 +82,10 @@ class ApiSpecificationsController < ApplicationController
 
   def api_specification_params
     params.require(:api_specification).permit(:name, :description, :openapi_version)
+  end
+
+  def set_branch
+    @branch = params[:branch] || ApiRevision.default_branch
   end
 
   def can_edit?
