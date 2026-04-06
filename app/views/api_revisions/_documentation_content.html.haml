@@ -15,28 +15,3 @@
   .lg:hidden.mt-8.flex.justify-center
     %button.px-5.py-3.bg-zinc-800.hover:bg-zinc-700.rounded-2xl.text-sm.font-medium.flex.items-center.gap-2{ data: { action: "click->spec-mode#toggleMobileDrawer" }}
       ← Back to endpoints list
-
--# %turbo-frame#documentation-frame
--#   .max-w-7xl.mx-auto.p-8
--#     - if @selected_endpoint
--#       .bg-zinc-900.border.border-zinc-700.rounded-3xl.p-8
--#         %h3.flex.items-center.gap-3.text-2xl.font-semibold
--#           %span.method-badge.bg-emerald-900.text-emerald-300.px-4.py-1.text-sm.font-mono
--#             = @selected_endpoint.method
--#           %span.font-mono
--#             = @selected_endpoint.path
--#           - if @selected_endpoint.deprecated
--#             %span.px-3.py-1.text-xs.bg-red-900.text-red-300.rounded-full Deprecated
--#
--#         %p.text-zinc-400.mt-2
--#           = @selected_endpoint.summary
--#         %p.text-zinc-500
--#           = @selected_endpoint.description.presence || "No description"
--#
--#         = render "api_revisions/endpoint_details", endpoint: @selected_endpoint
--#     - else
--#       .text-center.py-20
--#         %div.mx-auto.w-20.h-20.bg-zinc-800.rounded-3xl.flex.items-center.justify-center.mb-6.text-4xl
--#           📋
--#         %p.text-zinc-400.text-xl No endpoint selected
--#         %p.text-zinc-500.mt-2 Click an endpoint in the sidebar

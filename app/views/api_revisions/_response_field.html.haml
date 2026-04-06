@@ -1,4 +1,4 @@
-.response-row.bg-zinc-950.border.border-zinc-700.rounded-2xl.p-6.flex.flex-col.gap-4
+.response-row.bg-zinc-950.border.border-zinc-700.rounded-2xl.p-2.md:p-6.flex.flex-col.gap-4
   .grid.grid-cols-12.gap-2
     .col-span-3
       = select_tag "api_revision[responses][][status_code]",
@@ -17,16 +17,18 @@
                        class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-emerald-500 text-white"
 
   / Media Type
-  .bg-zinc-950.border.border-zinc-700.rounded-2xl.p-5.mt-2
+  .bg-zinc-950.border.border-zinc-700.rounded-2xl.p-2.md:p-5.mt-2
     .grid.grid-cols-2.gap-2
       .flex-1
-        %label.block.text-sm.font-medium.text-zinc-400.mb-3 Media Type
+        %label.block.text-sm.font-medium.text-zinc-400.mb-3
+          Media Type
         = select_tag "api_revision[responses][][response_body][media_type]",
                      options_for_select(%w[application/json application/xml text/plain], "application/json"),
                      class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-emerald-500 text-white cursor-pointer"
 
     / Properties inside this response
-    %label.block.text-sm.font-medium.text-zinc-400.my-3 Response Schema Properties
+    %label.block.text-sm.font-medium.text-zinc-400.my-3
+      Response Schema Properties
     .response-properties-list.space-y-2{ data: { manual_editor_target: "responsePropertiesContainer" } }
   %button{ type: "button", data: { action: "manual-editor#addResponseProperty" },
            class: "custom-form-field mt-4 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 cursor-pointer" }

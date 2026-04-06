@@ -4,16 +4,17 @@ export default class extends Controller {
   static targets = [
     "pathsList", "parametersContainer", "requestBodyContainer",
     "responsesContainer", "securityContainer", "preview",
-    "contentField", "existingContent", "openapiVersion"
+    "contentField", "existingContent", "openapiVersion",
+    "editorPanel", "previewPanel", "modeToggle"
   ]
 
   pathsData = {}
   currentPathKey = null
 
   connect() {
-    this.switchToTab("parameters")
+    this.switchTab("parameters")
     setTimeout(() => this.updatePreview(), 200)
-
+    this.showEditor()
     if (this.hasExistingContentTarget && this.existingContentTarget.value) {
       let openapi = { paths: {} }
       let raw = this.existingContentTarget.value.trim()
@@ -25,6 +26,34 @@ export default class extends Controller {
     }
   }
 
+  // ====================== NEW: EDITOR / PREVIEW TOGGLE ======================
+  showEditor() {
+    this.editorPanelTarget.classList.remove("hidden")
+    this.previewPanelTarget.classList.add("hidden")
+
+    this.modeToggleTargets.forEach(btn => {
+      const isEditor = btn.textContent.trim() === "Editor"
+      btn.classList.toggle("active", isEditor)
+      btn.classList.toggle("bg-zinc-900", isEditor)
+      btn.classList.toggle("text-white", isEditor)
+      btn.classList.toggle("shadow-sm", isEditor)
+    })
+  }
+
+  showPreview() {
+    this.editorPanelTarget.classList.add("hidden")
+    this.previewPanelTarget.classList.remove("hidden")
+    this.updatePreview()   // ensure latest full preview renders instantly
+
+    this.modeToggleTargets.forEach(btn => {
+      const isPreview = btn.textContent.trim() === "Live Preview"
+      btn.classList.toggle("active", isPreview)
+      btn.classList.toggle("bg-zinc-900", isPreview)
+      btn.classList.toggle("text-white", isPreview)
+      btn.classList.toggle("shadow-sm", isPreview)
+    })
+  }
+
   // ====================== PATHS ======================
   addPath(event) {
     event.preventDefault()
@@ -32,7 +61,7 @@ export default class extends Controller {
     pathItem.className = "px-4 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-2xl cursor-pointer flex items-center gap-3 path-item"
     pathItem.innerHTML = `
       <span class="method-badge bg-emerald-900 text-emerald-300 px-3 py-1 text-xs font-mono">GET</span>
-      <span class="path font-mono flex-1">/new/path</span>
+      <span class="path font-mono flex-1">/new/path/here</span>
     `
     pathItem.dataset.action = "click->manual-editor#selectPath"
     this.element.querySelector("#paths-list").appendChild(pathItem)
@@ -49,7 +78,8 @@ export default class extends Controller {
     event.currentTarget.classList.add("bg-zinc-700")
 
     const pathText = event.currentTarget.querySelector(".path")
-    if (pathText) document.getElementById("selected-path").textContent = pathText.textContent
+    console.log(pathText.textContent)
+    if (pathText) document.getElementById("selected-path").innerHTML = `<span dir="ltr">${pathText.textContent}</span>`
     this.updatePreview()
   }
 
@@ -134,23 +164,53 @@ export default class extends Controller {
   }
 
   // ====================== TABS ======================
+  // ====================== SUB-TAB SWITCHING (updated) ======================
   switchTab(event) {
-    event.preventDefault()
-    this.switchToTab(event.currentTarget.dataset.tab)
-  }
+    // Defensive preventDefault – works for both real button clicks AND mobile select
+    if (event && typeof event.preventDefault === "function") {
+      event.preventDefault()
+    }
 
-  switchToTab(tabName) {
-    document.querySelectorAll(".tab-content").forEach(tab => tab.classList.add("hidden"))
-    const activeTab = document.getElementById(`${tabName}-tab`)
-    if (activeTab) activeTab.classList.remove("hidden")
+    let tab
+    if (typeof event === "string") {
+      tab = event
+    } else if (event && event.currentTarget && event.currentTarget.dataset) {
+      tab = event.currentTarget.dataset.tab
+    } else if (event && event.target && event.target.value) {
+      tab = event.target.value
+    }
 
-    document.querySelectorAll(".tab-btn").forEach(btn => {
-      btn.classList.remove("border-b-2", "border-emerald-500", "text-emerald-400")
-      if (btn.dataset.tab === tabName) {
-        btn.classList.add("border-b-2", "border-emerald-500", "text-emerald-400")
+    if (!tab) return
+
+    // Hide all tab contents
+    this.element.querySelectorAll(".tab-content").forEach(content => {
+      content.classList.add("hidden")
+    })
+
+    // Show the selected one
+    const activeContent = this.element.querySelector(`#${tab}-tab`)
+    if (activeContent) {
+      activeContent.classList.remove("hidden")
+    }
+
+    // Update active button styling on desktop only
+    this.element.querySelectorAll(".tab-btn").forEach(btn => {
+      if (btn.dataset.tab === tab) {
+        btn.classList.add("border-b-2", "border-emerald-500", "text-white")
+        btn.classList.remove("text-zinc-400")
+      } else {
+        btn.classList.remove("border-b-2", "border-emerald-500", "text-white")
+        btn.classList.add("text-zinc-400")
       }
     })
-    this.updatePreview()
+  }
+
+  // ====================== MOBILE TAB SELECT (updated) ======================
+  switchMobileTab(event) {
+    const tab = event.target.value
+    this.switchTab(tab)                    // now passes string directly
+    // Keep the <select> value in sync
+    event.target.value = tab
   }
 
   // ====================== PARAMETERS ======================
@@ -243,32 +303,6 @@ export default class extends Controller {
     })
     return params
   }
-
-  // collectParameters() {
-  //   const params = []
-  //   this.parametersContainerTarget.querySelectorAll(".parameter-row").forEach(row => {
-  //     const name = row.querySelector('input[name*="\\[name\\]"]')?.value?.trim()
-  //     if (!name) return
-  //     params.push({
-  //       name:        name,
-  //       in:          row.querySelector('select[name*="\\[in_location\\]"]')?.value || "query",
-  //       required:    row.querySelector('input[name*="\\[required\\]"]')?.checked || false,
-  //       schema: {
-  //         type:      row.querySelector('select[name*="\\[type\\]"]')?.value || "string",
-  //         format:    row.querySelector('select[name*="\\[format\\]"]')?.value,
-  //         default:   row.querySelector('input[name*="\\[default\\]"]')?.value,
-  //         minLength: row.querySelector('input[name*="\\[min_length\\]"]')?.value,
-  //         maxLength: row.querySelector('input[name*="\\[max_length\\]"]')?.value,
-  //         pattern:   row.querySelector('input[name*="\\[pattern\\]"]')?.value,
-  //         minimum:   row.querySelector('input[name*="\\[minimum\\]"]')?.value,
-  //         maximum:   row.querySelector('input[name*="\\[maximum\\]"]')?.value
-  //       },
-  //       description: row.querySelector('input[name*="\\[description\\]"]')?.value || "",
-  //       example:     row.querySelector('input[name*="\\[example\\]"]')?.value
-  //     })
-  //   })
-  //   return params
-  // }
 
   // ====================== REQUEST BODY ======================
   addRequestBody(event) {
@@ -547,10 +581,10 @@ export default class extends Controller {
 
     const jsonString = JSON.stringify(data, null, 2)
     pane.innerHTML = `
-    <div class="bg-zinc-900 rounded-3xl p-5 border border-zinc-700 h-full flex flex-col">
+    <div class="bg-zinc-900 md:rounded-3xl p-5 border border-zinc-700 h-full flex flex-col">
       <div class="flex items-center justify-between mb-4 flex-shrink-0">
-        <span class="text-xs uppercase tracking-widest font-medium text-emerald-400">Live OpenAPI Preview</span>
-        <span class="px-3 py-1 text-[10px] font-mono bg-zinc-800 rounded-2xl">${this.currentPathKey}</span>
+<!--        <span class="text-xs uppercase tracking-widest font-medium text-emerald-400">Live OpenAPI Preview</span>-->
+        <span class="px-3 py-1 text-[14px] font-mono bg-zinc-800 rounded-2xl">${this.currentPathKey}</span>
       </div>
       <pre class="flex-1 text-emerald-200 text-sm leading-relaxed overflow-auto bg-zinc-950 p-4 rounded-2xl border border-zinc-800 whitespace-pre max-h-[calc(100vh-280px)] md:max-h-none">${this.escapeHtml(jsonString)}</pre>
     </div>
@@ -573,86 +607,6 @@ export default class extends Controller {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;")
   }
-
-  // // ====================== LIVE PREVIEW ======================
-  // updatePreview() {
-  //   const activeTab = document.querySelector(".tab-content:not(.hidden)")
-  //   if (!activeTab) return
-  //
-  //   let sampleData = {}
-  //   if (activeTab.id === "request-tab") {
-  //     sampleData = this.buildRequestExample()
-  //   } else if (activeTab.id === "responses-tab") {
-  //     sampleData = this.buildResponsesExample()
-  //   }
-  //
-  //   this.renderPreview(sampleData)
-  // }
-  //
-  // buildRequestExample() {
-  //   const example = {}
-  //   const rows = this.requestBodyContainerTarget?.querySelectorAll(".request-body-property-row") || []
-  //   rows.forEach(row => {
-  //     const name = row.querySelector('input[name*="\\[name\\]"]')?.value?.trim()
-  //     if (!name) return
-  //     const exField = row.querySelector('input[name*="\\[example\\]"]')?.value?.trim()
-  //     const type = row.querySelector('select[name*="\\[type\\]"]')?.value
-  //     example[name] = exField || this.getSampleValueForType(type)
-  //   })
-  //   return example
-  // }
-  //
-  // buildResponsesExample() {
-  //   const responsesExample = {}
-  //   document.querySelectorAll(".response-row").forEach(row => {
-  //     const status = row.querySelector('select[name*="status_code"]')?.value || "200"
-  //     const example = {}
-  //     row.querySelectorAll(".response-property-row").forEach(propRow => {
-  //       const name = propRow.querySelector('input[name*="\\[name\\]"]')?.value?.trim()
-  //       if (!name) return
-  //       const exField = propRow.querySelector('input[name*="\\[example\\]"]')?.value?.trim()
-  //       const type = propRow.querySelector('select[name*="\\[type\\]"]')?.value
-  //       example[name] = exField || this.getSampleValueForType(type)
-  //     })
-  //     if (Object.keys(example).length > 0) responsesExample[status] = example
-  //   })
-  //   return responsesExample
-  // }
-  //
-  // getSampleValueForType(type) {
-  //   switch (type) {
-  //     case "string": return "example_value"
-  //     case "integer": case "number": return 42
-  //     case "boolean": return true
-  //     case "array": return ["item1", "item2"]
-  //     case "object": return { key: "value" }
-  //     case "enum": return "one_of_the_values"
-  //     case "dictionary": return { key: "value" }
-  //     default: return null
-  //   }
-  // }
-  //
-  // renderPreview(data) {
-  //   const pane = this.previewTarget
-  //   if (!pane) return
-  //
-  //   if (Object.keys(data).length === 0) {
-  //     pane.innerHTML = `<div class="text-zinc-500 italic text-center mt-20">Add properties &amp; examples to see live JSON</div>`
-  //     return
-  //   }
-  //
-  //   const json = JSON.stringify(data, null, 2)
-  //   pane.innerHTML = `<pre class="text-emerald-300 whitespace-pre overflow-auto">${this.escapeHtml(json)}</pre>`
-  // }
-  //
-  // escapeHtml(unsafe) {
-  //   return unsafe
-  //       .replace(/&/g, "&amp;")
-  //       .replace(/</g, "&lt;")
-  //       .replace(/>/g, "&gt;")
-  //       .replace(/"/g, "&quot;")
-  //       .replace(/'/g, "&#039;")
-  // }
 
   // ====================== SUBMIT + SERIALIZER ======================
   handleSubmit(event) {
@@ -809,19 +763,5 @@ export default class extends Controller {
       const clone = document.getElementById("security-scheme-template").content.cloneNode(true)
       this.securityContainerTarget.appendChild(clone)
     })
-  }
-
-  // ====================== INITIAL ======================
-
-  addInitialPath() {
-    const firstPath = document.createElement("div")
-    firstPath.className = "px-4 py-3 bg-zinc-700 rounded-2xl cursor-pointer flex items-center gap-3 path-item"
-    firstPath.innerHTML = `
-      <span class="method-badge bg-emerald-900 text-emerald-300 px-3 py-1 text-xs font-mono">GET</span>
-      <span class="path font-mono flex-1">/api/v1/example</span>
-    `
-    firstPath.dataset.action = "click->manual-editor#selectPath"
-    document.getElementById("paths-list").appendChild(firstPath)
-    this.selectPath({ currentTarget: firstPath })
   }
 }

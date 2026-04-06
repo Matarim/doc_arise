@@ -1,12 +1,12 @@
 = form_with model: api_revision,
             url: api_revision.persisted? ? project_api_specification_api_revision_path(project, api_specification, api_revision) : project_api_specification_api_revisions_path(project, api_specification),
             method: api_revision.persisted? ? :patch : :post,
-            class: "flex flex-col flex-wrap md:flex-row gap-8",
+            class: "flex flex-wrap gap-4 md:gap-8",
             data: { controller: "manual-editor" } do |f|
 
-  / LEFT SIDEBAR – Paths List (mobile: full width, scrollable)
-  .bg-zinc-950.border.border-zinc-700.rounded-3xl.p-6.flex.flex-col.w-full.md:w-80
-    .flex.items-center.justify-between.mb-6
+  / LEFT SIDEBAR – Paths List (unchanged)
+  .bg-zinc-950.border.border-zinc-700.rounded-3xl.p-4.md:p-6.flex.flex-col.max-w-lg.w-full.mx-auto
+    .flex.items-center.justify-between.mb-4
       %h3.text-lg.font-semibold
         Paths
       %button{ type: "button", data: { action: "manual-editor#addPath" },
@@ -14,122 +14,153 @@
         +
     #paths-list.flex-1.overflow-y-auto.space-y-1{ data: { manual_editor_target: "pathsList" } }
 
-  / MAIN EDITOR
-  .flex-1.flex.flex-col.bg-zinc-900.border.border-zinc-700.rounded-3xl
+  / MAIN AREA – now contains toggle + exclusive panels
+  .flex-1.flex.flex-col.bg-zinc-900.border.border-zinc-700.rounded-3xl.max-w-7xl.w-full
 
-    / Selected Path Header (responsive grid)
-    .border-b.border-zinc-700.px-4.md:px-8.py-6.md:py-8.flex.flex-col.gap-6
-      .grid.grid-cols-1.md:grid-cols-12.gap-6.flex.justify-between
-        .md:col-span-7.gap-2
-          = label_tag "operation-tags", "Tags", class: "block text-sm font-medium text-zinc-400 mb-2"
-          = text_field_tag "operation-tags", nil,
-                           placeholder: "Tags: users, profile, v1",
-                           class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono py-4 px-5 text-base",
-                           id: "operation-tags"
-        .md:col-span-5.gap-2
-          = label_tag "spec_version", "Version", class: "block text-sm font-medium text-zinc-400 mb-2"
-          = text_field_tag "spec_version", nil,
-                           placeholder: "1.0.0",
-                           class: "custom-form-field w-28 bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono text-center py-4 px-5 text-base",
-                           id: "spec-version"
+    / Toggle between Editor and Live Preview (mobile-first)
+    .flex.border-b.border-zinc-700.px-6.py-3
+      .inline-flex.w-full.sm:w-auto.rounded-3xl.bg-zinc-800.p-1.shadow-inner
+        %button{ type: "button",
+                 data: { action: "manual-editor#showEditor", manual_editor_target: "modeToggle" },
+                 class: "mode-toggle-btn cursor-pointer flex-1 sm:flex-none px-7 py-2 text-sm font-semibold rounded-3xl transition-all active" }
+          Editor
+        %button{ type: "button",
+                 data: { action: "manual-editor#showPreview", manual_editor_target: "modeToggle" },
+                 class: "mode-toggle-btn cursor-pointer flex-1 sm:flex-none px-7 py-2 text-sm font-semibold rounded-3xl transition-all" }
+          Live Preview
 
-      .flex.items-center.gap-4.flex-wrap
-        = select_tag "http_method", options_for_select(%w[GET POST PUT PATCH DELETE], "GET"),
-                     class: "bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-emerald-500 text-white font-mono cursor-pointer text-base",
-                     data: { action: "change->manual-editor#updateMethod" }
+    / EDITOR PANEL (original content lives here)
+    #editor-panel.flex-1.flex.flex-col{ data: { manual_editor_target: "editorPanel" } }
 
-        %span.font-mono.text-3xl.ml-3#selected-path{ contenteditable: true,
-          data: { action: "blur->manual-editor#updatePathName" } } /api/v1/example
-        %button{ type: "button", data: { action: "manual-editor#removePath" },
-                 class: "ml-auto text-red-400 hover:text-red-300 text-sm font-medium cursor-pointer flex items-center gap-1" }
-          %span.text-2xl
-            ×
+      / Selected Path Header (unchanged)
+      .border-b.border-zinc-700.px-4.md:px-8.py-6.md:py-8.flex.flex-col.gap-2
+        .grid.grid-cols-12.gap-6.flex.justify-between
+          .col-span-7.gap-2
+            = label_tag "operation-tags", "Tags", class: "block text-sm font-medium text-zinc-400 mb-2"
+            = text_field_tag "operation-tags", nil,
+                             placeholder: "Tags: users, profile, v1",
+                             class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 min-w-20 w-full rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono",
+                             id: "operation-tags"
+          .col-span-5.gap-2
+            = label_tag "spec_version", "Version", class: "block text-sm font-medium text-zinc-400 mb-2"
+            = text_field_tag "spec_version", nil,
+                             placeholder: "1.0.0",
+                             class: "custom-form-field w-28 bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono text-center",
+                             id: "spec-version"
+        .flex.items-center.gap-4.flex-wrap
+          = select_tag "http_method", options_for_select(%w[GET POST PUT PATCH DELETE], "GET"),
+                       class: "bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-emerald-500 text-white font-mono cursor-pointer",
+                       data: { action: "change->manual-editor#updateMethod" }
 
-      .bg-zinc-950.border.border-zinc-700.rounded-2xl.p-6
-        .grid.grid-cols-12.gap-2
-          .col-span-5.flex.items-center.gap-4
-            %h5.text-xs.font-medium.tracking-widest.text-zinc-500.mb-4.uppercase Operation Metadata
-          .col-span-7.flex.justify-end.gap-2
-            = check_box_tag "operation-deprecated", "1", false,
-                              class: "w-5 h-5 accent-red-500",
-                              id: "operation-deprecated"
-            = label_tag "operation-deprecated", "Deprecated", class: "text-sm font-medium text-zinc-400 cursor-pointer"
+          .flex.items-center.gap-4.w-full
+            %span.font-mono.ml-3.truncate.text-left#selected-path{ dir: "rtl", class: "text-[clamp(1.1rem,2vw,1.74rem)]", contenteditable: true, data: { action: "blur->manual-editor#updatePathName" } }
+              api/v1/example
+            %button{ type: "button", data: { action: "manual-editor#removePath" },
+                     class: "ml-auto text-red-400 hover:text-red-300 text-sm font-medium cursor-pointer flex items-center gap-1" }
+              %span.text-2xl
+                ×
 
-        .grid.grid-cols-1.md:grid-cols-12.gap-6
-          .md:col-span-5
-            = label_tag "operation-summary", "Summary", class: "block text-sm font-medium text-zinc-400 mb-2"
-            = text_field_tag "operation-summary", nil,
-                             placeholder: "Get user by ID",
-                             class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono py-4 px-5 text-base",
-                             id: "operation-summary"
+        .bg-zinc-950.border.border-zinc-700.rounded-2xl.p-6.flex.flex-col
+          .grid.grid-cols-12.gap-6.flex.justify-between
+            .col-span-5.flex.items-center.gap-4
+              %h5.text-xs.font-medium.tracking-widest.text-zinc-500.mb-4.uppercase Operation Metadata
+            .col-span-7.flex.justify-end.gap-2
+              = check_box_tag "operation-deprecated", "1", false,
+                                class: "w-5 h-5 accent-red-500",
+                                id: "operation-deprecated"
+              = label_tag "operation-deprecated", "Deprecated", class: "text-sm font-medium text-zinc-400 cursor-pointer"
 
-          .md:col-span-5
-            = label_tag "operation-id", "Operation ID", class: "block text-sm font-medium text-zinc-400 mb-2"
-            = text_field_tag "operation-id", nil,
-                             placeholder: "getUserById",
-                             class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono py-4 px-5 text-base",
-                             id: "operation-id"
+          .grid.grid-cols-12.gap-6.flex.justify-between.flex-wrap
+            .col-span-12.md:col-span-5
+              = label_tag "operation-summary", "Summary", class: "block text-sm font-medium text-zinc-400 mb-2"
+              = text_field_tag "operation-summary", nil,
+                               placeholder: "Get user by ID",
+                               class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono",
+                               id: "operation-summary"
 
-          .col-span-12
-            = label_tag "operation-description", "Description", class: "block text-sm font-medium text-zinc-400 mb-2"
-            = text_area_tag "operation-description", nil,
-                            placeholder: "Retrieves a user and returns full profile details...",
-                            class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono py-4 px-5 text-base h-32",
-                            id: "operation-description"
+            .col-span-12.md:col-span-7
+              = label_tag "operation-id", "Operation ID", class: "block text-sm font-medium text-zinc-400 mb-2"
+              = text_field_tag "operation-id", nil,
+                               placeholder: "getUserById",
+                               class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono",
+                               id: "operation-id"
 
-    / Sub-tabs (scrollable on mobile)
-    .flex.border-b.border-zinc-700.px-4.md:px-8.overflow-x-auto
-      %button.tab-btn.px-8.py-4.font-medium.border-b-2.border-emerald-500.text-zinc-400.hover:text-zinc-200.cursor-pointer.whitespace-nowrap{ type: "button",
-        data: { action: "manual-editor#switchTab", tab: "parameters" } } Parameters
-      %button.tab-btn.px-8.py-4.font-medium.text-zinc-400.hover:text-zinc-200.cursor-pointer.whitespace-nowrap{ type: "button",
-        data: { action: "manual-editor#switchTab", tab: "request" } } Request Body
-      %button.tab-btn.px-8.py-4.font-medium.text-zinc-400.hover:text-zinc-200.cursor-pointer.whitespace-nowrap{ type: "button",
-        data: { action: "manual-editor#switchTab", tab: "responses" } } Responses
-      %button.tab-btn.px-8.py-4.font-medium.text-zinc-400.hover:text-zinc-200.cursor-pointer.whitespace-nowrap{ type: "button",
-        data: { action: "manual-editor#switchTab", tab: "security" } } Security
+            .col-span-12
+              = label_tag "operation-description", "Description", class: "block text-sm font-medium text-zinc-400 mb-2"
+              = text_area_tag "operation-description", nil, rows: 3,
+                              placeholder: "Retrieves a user and returns full profile details...",
+                              class: "md:custom-form-field p-2 w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono",
+                              id: "operation-description"
 
-    / Tab Contents – pure client-side (scrollable on mobile)
-    #parameters-tab.tab-content.flex-1.overflow-y-auto.p-4.md:p-8
-      #parameters-list.space-y-4{ data: { manual_editor_target: "parametersContainer" } }
-      %button{ type: "button", data: { action: "manual-editor#addParameter" },
-               class: "mt-6 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 cursor-pointer" }
-        + Add Parameter
+      / Sub-tabs (unchanged)
+      .hidden.md:flex.border-b.border-zinc-700.px-8
+        %button.tab-btn.px-8.py-4.font-medium.border-b-2.border-emerald-500.text-zinc-400.hover:text-zinc-200.cursor-pointer{ type: "button",
+          data: { action: "manual-editor#switchTab", tab: "parameters" } } Parameters
+        %button.tab-btn.px-8.py-4.font-medium.text-zinc-400.hover:text-zinc-200.cursor-pointer{ type: "button",
+          data: { action: "manual-editor#switchTab", tab: "request" } } Request Body
+        %button.tab-btn.px-8.py-4.font-medium.text-zinc-400.hover:text-zinc-200.cursor-pointer{ type: "button",
+          data: { action: "manual-editor#switchTab", tab: "responses" } } Responses
+        %button.tab-btn.px-8.py-4.font-medium.text-zinc-400.hover:text-zinc-200.cursor-pointer{ type: "button",
+          data: { action: "manual-editor#switchTab", tab: "security" } } Security
+      .md:hidden.border-b.border-zinc-700.px-8.py-3
+        %h4.text-lg.font-medium.mb-2.text-zinc-400
+          Section:
+        %select.w-full.custom-form-field.bg-zinc-800.border.border-zinc-700.rounded-3xl.text-white.font-medium.focus:outline-none.focus:border-emerald-500.cursor-pointer.text-base{ data: { action: "change->manual-editor#switchMobileTab" } }
+          %option{ value: "parameters", selected: true } Parameters
+          %option{ value: "request" } Request Body
+          %option{ value: "responses" } Responses
+          %option{ value: "security" } Security
 
-    #request-tab.tab-content.flex-1.overflow-y-auto.p-4.md:p-8.hidden
-      %h4.text-lg.font-medium.mb-6 Request Body
-      .bg-zinc-950.border.border-zinc-700.rounded-2xl.p-6.mb-8
-        .grid.grid-cols-1.md:grid-cols-2.gap-6
-          .flex-1
-            %label.block.text-sm.font-medium.text-zinc-400.mb-3 Media Type
-            = select_tag "api_revision[request_body][media_type]",
-                         options_for_select(%w[application/json application/xml text/plain], "application/json"),
-                         class: "w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-emerald-500 text-white cursor-pointer"
-        %label.block.text-sm.font-medium.text-zinc-400.my-3 Properties
-        #request-body-list.space-y-2{ data: { manual_editor_target: "requestBodyContainer" } }
-      %button{ type: "button", data: { action: "manual-editor#addRequestBody" },
-                   class: "mt-6 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 cursor-pointer" }
-        + Add Request Body Property
+      #parameters-tab.tab-content.flex-1.overflow-y-auto.p-4.md:p-8
+        #parameters-list.space-y-4{ data: { manual_editor_target: "parametersContainer" } }
+        %button{ type: "button", data: { action: "manual-editor#addParameter" },
+                 class: "mt-6 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 cursor-pointer" }
+          + Add Parameter
 
-    #responses-tab.tab-content.flex-1.overflow-y-auto.p-4.md:p-8.hidden
-      #responses-list.space-y-4{ data: { manual_editor_target: "responsesContainer" } }
-      %button{ type: "button", data: { action: "manual-editor#addResponse" },
-               class: "mt-6 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 cursor-pointer" }
-        + Add Response
+      #request-tab.tab-content.flex-1.overflow-y-auto.p-4.md:p-8.hidden
+        %h4.text-lg.font-medium.mb-6 Request Body
+        .bg-zinc-950.border.border-zinc-700.rounded-2xl.p-6.mb-8
+          .grid.grid-cols-1.md:grid-cols-2.gap-6
+            .flex-1
+              %label.block.text-sm.font-medium.text-zinc-400.mb-3 Media Type
+              = select_tag "api_revision[request_body][media_type]",
+                           options_for_select(%w[application/json application/xml text/plain], "application/json"),
+                           class: "w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-emerald-500 text-white cursor-pointer"
+          %label.block.text-sm.font-medium.text-zinc-400.my-3 Properties
+          #request-body-list.space-y-2{ data: { manual_editor_target: "requestBodyContainer" } }
+        %button{ type: "button", data: { action: "manual-editor#addRequestBody" },
+                     class: "mt-6 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 cursor-pointer" }
+          + Add Request Body Property
 
-    #security-tab.tab-content.flex-1.overflow-y-auto.p-4.md:p-8.hidden
-      #security-list.space-y-4{ data: { manual_editor_target: "securityContainer" } }
-      %button{ type: "button", data: { action: "manual-editor#addSecurityScheme" },
-               class: "mt-6 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 cursor-pointer" }
-        + Add Security Scheme
+      #responses-tab.tab-content.flex-1.overflow-y-auto.p-4.md:p-8.hidden
+        #responses-list.space-y-4{ data: { manual_editor_target: "responsesContainer" } }
+        %button{ type: "button", data: { action: "manual-editor#addResponse" },
+                 class: "mt-6 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 cursor-pointer" }
+          + Add Response
 
-  / Right live preview column (hidden on mobile, shown on lg+)
-  .hidden.md:flex.w-96.flex-col.bg-zinc-950.border.border-zinc-700.rounded-3xl.p-6
-    %h4.text-xs.font-semibold.tracking-widest.text-zinc-400.uppercase.mb-4 Live OpenAPI Preview
-    %div#preview-pane{ data: { manual_editor_target: "preview" } }
-      %pre.text-xs.font-mono.bg-black.p-4.rounded-2xl.overflow-auto.flex-1.text-emerald-300
-        Add properties & examples to see live JSON
+      #security-tab.tab-content.flex-1.overflow-y-auto.p-4.md:p-8.hidden
+        #security-list.space-y-4{ data: { manual_editor_target: "securityContainer" } }
+        %button{ type: "button", data: { action: "manual-editor#addSecurityScheme" },
+                 class: "mt-6 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 cursor-pointer" }
+          + Add Security Scheme
+          / Bottom Save
+      .border-t.border-zinc-700.px-8.py-6.mt-auto.flex.gap-4
+        = f.submit "Publish Changes",
+                   params: { commit_draft: "false" },
+                   class: "flex-1 bg-emerald-600 hover:bg-emerald-700 py-5 rounded-3xl font-bold text-white text-lg transition-all cursor-pointer",
+                   data: { action: "click->manual-editor#handleSubmit" }
 
-  = f.hidden_field :content, data: { manual_editor_target: "contentField" }
+        = f.submit "Save as Draft",
+                   params: { commit_draft: "true" },
+                   class: "flex-1 bg-zinc-700 hover:bg-zinc-600 py-5 rounded-3xl font-bold text-white text-lg transition-all cursor-pointer",
+                   name: "commit_draft",
+                   data: { action: "click->manual-editor#handleSubmit" }
+    / LIVE PREVIEW PANEL (new – hidden by default)
+    #preview-panel.flex.flex-col.hidden{ data: { manual_editor_target: "previewPanel" } }
+      .flex-1.md:p-6
+        %div{ data: { manual_editor_target: "preview" } }
+          / JS will render full combined preview here (no layout shift)
+    = f.hidden_field :content, data: { manual_editor_target: "contentField" }
   = f.hidden_field :parent_revision_id, value: api_revision&.id
 
   - if api_revision&.content.present?
@@ -150,179 +181,3 @@
     = render "api_revisions/response_property_field", f: f
   %template#security-scheme-template
     = render "api_revisions/security_scheme_field", f: f
-
--# = form_with model: api_revision,
--#             url: api_revision.persisted? ? project_api_specification_api_revision_path(project, api_specification, api_revision) : project_api_specification_api_revisions_path(project, api_specification),
--#             method: api_revision.persisted? ? :patch : :post,
--#             class: "flex gap-8",
--#             data: { controller: "manual-editor" } do |f|
--#
--#   / LEFT SIDEBAR – Paths List
--#   .bg-zinc-950.border.border-zinc-700.rounded-3xl.p-6.flex.flex-col
--#     .flex.items-center.justify-between.mb-6
--#       %h3.text-lg.font-semibold
--#         Paths
--#       %button{ type: "button", data: { action: "manual-editor#addPath" },
--#                  class: "bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-2xl text-xl font-medium flex items-center justify-center cursor-pointer" }
--#         +
--#     #paths-list.flex-1.overflow-y-auto.space-y-1{ data: { manual_editor_target: "pathsList" } }
--#
--#   / MAIN EDITOR
--#   .flex-1.flex.flex-col.bg-zinc-900.border.border-zinc-700.rounded-3xl
--#
--#     / Selected Path Header
--#     .border-b.border-zinc-700.px-8.py-8.flex.flex-col.gap-6
--#       .grid.grid-cols-12.gap-6.flex.justify-between
--#         .col-span-7.gap-2
--#           = label_tag "operation-tags", "Tags", class: "block text-sm font-medium text-zinc-400 mb-2"
--#           = text_field_tag "operation-tags", nil,
--#                            placeholder: "Tags: users, profile, v1",
--#                            class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono",
--#                            id: "operation-tags"
--#         .col-span-5.gap-2
--#           = label_tag "spec_version", "Version", class: "block text-sm font-medium text-zinc-400 mb-2"
--#           = text_field_tag "spec_version", nil,
--#                            placeholder: "1.0.0",
--#                            class: "custom-form-field w-28 bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono text-center",
--#                            id: "spec-version"
--#       .flex.items-center.gap-4
--#         = select_tag "http_method", options_for_select(%w[GET POST PUT PATCH DELETE], "GET"),
--#                      class: "bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-emerald-500 text-white font-mono cursor-pointer",
--#                      data: { action: "change->manual-editor#updateMethod" }
--#
--#         %span.font-mono.text-3xl.ml-3#selected-path{ contenteditable: true,
--#           data: { action: "blur->manual-editor#updatePathName" } } /api/v1/example
--#         %button{ type: "button", data: { action: "manual-editor#removePath" },
--#                  class: "ml-auto text-red-400 hover:text-red-300 text-sm font-medium cursor-pointer flex items-center gap-1" }
--#           %span.text-2xl
--#             ×
--#
--#       .bg-zinc-950.border.border-zinc-700.rounded-2xl.p-6
--#         .grid.grid-cols-12.gap-2
--#           .col-span-5.flex.items-center.gap-4
--#             %h5.text-xs.font-medium.tracking-widest.text-zinc-500.mb-4.uppercase Operation Metadata
--#           .col-span-7.flex.justify-end.gap-2
--#             = check_box_tag "operation-deprecated", "1", false,
--#                               class: "w-5 h-5 accent-red-500",
--#                               id: "operation-deprecated"
--#             = label_tag "operation-deprecated", "Deprecated", class: "text-sm font-medium text-zinc-400 cursor-pointer"
--#
--#         .grid.grid-cols-12.gap-6
--#           .col-span-5
--#             = label_tag "operation-summary", "Summary", class: "block text-sm font-medium text-zinc-400 mb-2"
--#             = text_field_tag "operation-summary", nil,
--#                              placeholder: "Get user by ID",
--#                              class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono",
--#                              id: "operation-summary"
--#
--#           .col-span-5
--#             = label_tag "operation-id", "Operation ID", class: "block text-sm font-medium text-zinc-400 mb-2"
--#             = text_field_tag "operation-id", nil,
--#                              placeholder: "getUserById",
--#                              class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono",
--#                              id: "operation-id"
--#
--#           .col-span-12
--#             = label_tag "operation-description", "Description", class: "block text-sm font-medium text-zinc-400 mb-2"
--#             = text_area_tag "operation-description", nil,
--#                             placeholder: "Retrieves a user and returns full profile details...",
--#                             class: "custom-form-field w-full bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-white font-mono",
--#                             id: "operation-description"
--#
--#     / Sub-tabs (with cursor-pointer)
--#     .flex.border-b.border-zinc-700.px-8
--#       %button.tab-btn.px-8.py-4.font-medium.border-b-2.border-emerald-500.text-zinc-400.hover:text-zinc-200.cursor-pointer{ type: "button",
--#         data: { action: "manual-editor#switchTab", tab: "parameters" } } Parameters
--#       %button.tab-btn.px-8.py-4.font-medium.text-zinc-400.hover:text-zinc-200.cursor-pointer{ type: "button",
--#         data: { action: "manual-editor#switchTab", tab: "request" } } Request Body
--#       %button.tab-btn.px-8.py-4.font-medium.text-zinc-400.hover:text-zinc-200.cursor-pointer{ type: "button",
--#         data: { action: "manual-editor#switchTab", tab: "responses" } } Responses
--#       %button.tab-btn.px-8.py-4.font-medium.text-zinc-400.hover:text-zinc-200.cursor-pointer{ type: "button",
--#         data: { action: "manual-editor#switchTab", tab: "security" } } Security
--#
--#     / Tab Contents – pure client-side
--#     #parameters-tab.tab-content.flex-1.overflow-y-auto.p-8
--#       #parameters-list.space-y-4{ data: { manual_editor_target: "parametersContainer" } }
--#       %button{ type: "button", data: { action: "manual-editor#addParameter" },
--#                class: "mt-6 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 cursor-pointer" }
--#         + Add Parameter
--#
--#     #request-tab.tab-content.flex-1.overflow-y-auto.p-8.hidden
--#       %h4.text-lg.font-medium.mb-6 Request Body
--#
--#       / Media Type + Top-level Description (standard OpenAPI)
--#       .bg-zinc-950.border.border-zinc-700.rounded-2xl.p-6.mb-8
--#         .grid.grid-cols-2.gap-6
--#           .flex-1
--#             %label.block.text-sm.font-medium.text-zinc-400.mb-3 Media Type
--#             = select_tag "api_revision[request_body][media_type]",
--#                              options_for_select(%w[application/json application/xml text/plain], "application/json"),
--#                              class: "w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:outline-none focus:border-emerald-500 text-white cursor-pointer"
--#
--#         / Dynamic Properties (the real schema)
--#         %label.block.text-sm.font-medium.text-zinc-400.my-3 Properties
--#         #request-body-list.space-y-2{ data: { manual_editor_target: "requestBodyContainer" } }
--#       %button{ type: "button", data: { action: "manual-editor#addRequestBody" },
--#                    class: "mt-6 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 cursor-pointer" }
--#         + Add Property
--#
--#     #responses-tab.tab-content.flex-1.overflow-y-auto.p-8.hidden
--#       #responses-list.space-y-6{ data: { manual_editor_target: "responsesContainer" } }
--#       %button{ type: "button", data: { action: "manual-editor#addResponse" },
--#                    class: "mt-6 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 cursor-pointer" }
--#         + Add Response
--#
--#     #security-tab.tab-content.flex-1.overflow-y-auto.p-8.hidden
--#       %h4.text-lg.font-medium.mb-6 Security Schemes
--#
--#       #security-schemes-list.space-y-6{ data: { manual_editor_target: "securityContainer" } }
--#       %button{ type: "button", data: { action: "manual-editor#addSecurityScheme" },
--#                    class: "mt-6 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 cursor-pointer" }
--#         + Add Security Scheme
--#
--#     / Bottom Save
--#     .border-t.border-zinc-700.px-8.py-6.mt-auto.flex.gap-4
--#       = f.submit "Publish Changes",
--#                  params: { commit_draft: "false" },
--#                  class: "flex-1 bg-emerald-600 hover:bg-emerald-700 py-5 rounded-3xl font-bold text-white text-lg transition-all cursor-pointer",
--#                  data: { action: "click->manual-editor#handleSubmit" }
--#
--#       = f.submit "Save as Draft",
--#                  params: { commit_draft: "true" },
--#                  class: "flex-1 bg-zinc-700 hover:bg-zinc-600 py-5 rounded-3xl font-bold text-white text-lg transition-all cursor-pointer",
--#                  name: "commit_draft",
--#                  data: { action: "click->manual-editor#handleSubmit" }
--#   / RIGHT: LIVE EXAMPLE COLUMN
--#   .bg-zinc-950.border.border-zinc-700.rounded-3xl.flex.flex-col.overflow-hidden
--#     .flex.border-b.border-zinc-700.justify-between.items-center
--#       .p-6.flex.items-center.gap-2
--#         %h4.text-lg.font-semibold Example
--#         %span.text-xs.px-2.py-0.5.bg-emerald-900.text-emerald-300.rounded.font-mono JSON
--#       .p-6.text-end
--#         %button{ type: "button", data: { action: "manual-editor#updatePreview" },
--#                      class: "text-xl text-emerald-400 hover:text-emerald-300 hover:underline cursor-pointer" }
--#           ↻
--#     #preview-pane.flex-1.p-6.font-mono.text-sm.bg-black.overflow-auto.text-emerald-300{ data: { manual_editor_target: "preview" } }
--#       .text-zinc-500.italic.text-center.mt-20
--#         Add properties & examples to see live JSON
--#   = f.hidden_field :content, data: { manual_editor_target: "contentField" }
--#   = f.hidden_field :parent_revision_id, value: api_revision&.id
--#
--#   - if api_revision&.content.present?
--#     - content_json = api_revision.content.is_a?(String) ? api_revision.content : api_revision.content.to_json
--#     = hidden_field_tag :existing_content, content_json,
--#                        data: { manual_editor_target: "existingContent" }
--#
--#   = hidden_field_tag :openapi_version, api_specification.openapi_version,
--#                      data: { manual_editor_target: "openapiVersion" }
--#   / Templates
--#   %template#parameter-template
--#     = render partial: "api_revisions/parameter_field", locals: { f: f }
--#   %template#request-body-template
--#     = render "api_revisions/request_body_field", f: f
--#   %template#response-template
--#     = render "api_revisions/response_field", f: f
--#   %template#response-property-template
--#     = render "api_revisions/response_property_field", f: f
--#   %template#security-scheme-template
--#     = render "api_revisions/security_scheme_field", f: f
