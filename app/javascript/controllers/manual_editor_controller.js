@@ -200,31 +200,75 @@ export default class extends Controller {
     this.parametersContainerTarget.appendChild(clone)
   }
 
+  // ====================== PARAMETERS ======================
   collectParameters() {
     const params = []
     this.parametersContainerTarget.querySelectorAll(".parameter-row").forEach(row => {
       const name = row.querySelector('input[name*="\\[name\\]"]')?.value?.trim()
       if (!name) return
+
+      const schema = {}
+      const type = row.querySelector('select[name*="\\[type\\]"]')?.value || "string"
+      if (type) schema.type = type
+
+      const format = row.querySelector('select[name*="\\[format\\]"]')?.value?.trim()
+      if (format) schema.format = format
+
+      const defaultVal = row.querySelector('input[name*="\\[default\\]"]')?.value?.trim()
+      if (defaultVal) schema.default = defaultVal
+
+      const minLength = row.querySelector('input[name*="\\[min_length\\]"]')?.value?.trim()
+      if (minLength) schema.minLength = parseInt(minLength, 10)
+
+      const maxLength = row.querySelector('input[name*="\\[max_length\\]"]')?.value?.trim()
+      if (maxLength) schema.maxLength = parseInt(maxLength, 10)
+
+      const pattern = row.querySelector('input[name*="\\[pattern\\]"]')?.value?.trim()
+      if (pattern) schema.pattern = pattern
+
+      const minimum = row.querySelector('input[name*="\\[minimum\\]"]')?.value?.trim()
+      if (minimum) schema.minimum = parseFloat(minimum)
+
+      const maximum = row.querySelector('input[name*="\\[maximum\\]"]')?.value?.trim()
+      if (maximum) schema.maximum = parseFloat(maximum)
+
       params.push({
         name:        name,
         in:          row.querySelector('select[name*="\\[in_location\\]"]')?.value || "query",
         required:    row.querySelector('input[name*="\\[required\\]"]')?.checked || false,
-        schema: {
-          type:      row.querySelector('select[name*="\\[type\\]"]')?.value || "string",
-          format:    row.querySelector('select[name*="\\[format\\]"]')?.value,
-          default:   row.querySelector('input[name*="\\[default\\]"]')?.value,
-          minLength: row.querySelector('input[name*="\\[min_length\\]"]')?.value,
-          maxLength: row.querySelector('input[name*="\\[max_length\\]"]')?.value,
-          pattern:   row.querySelector('input[name*="\\[pattern\\]"]')?.value,
-          minimum:   row.querySelector('input[name*="\\[minimum\\]"]')?.value,
-          maximum:   row.querySelector('input[name*="\\[maximum\\]"]')?.value
-        },
-        description: row.querySelector('input[name*="\\[description\\]"]')?.value || "",
-        example:     row.querySelector('input[name*="\\[example\\]"]')?.value
+        schema:      schema,
+        description: row.querySelector('input[name*="\\[description\\]"]')?.value?.trim() || "",
+        example:     row.querySelector('input[name*="\\[example\\]"]')?.value?.trim() || undefined
       })
     })
     return params
   }
+
+  // collectParameters() {
+  //   const params = []
+  //   this.parametersContainerTarget.querySelectorAll(".parameter-row").forEach(row => {
+  //     const name = row.querySelector('input[name*="\\[name\\]"]')?.value?.trim()
+  //     if (!name) return
+  //     params.push({
+  //       name:        name,
+  //       in:          row.querySelector('select[name*="\\[in_location\\]"]')?.value || "query",
+  //       required:    row.querySelector('input[name*="\\[required\\]"]')?.checked || false,
+  //       schema: {
+  //         type:      row.querySelector('select[name*="\\[type\\]"]')?.value || "string",
+  //         format:    row.querySelector('select[name*="\\[format\\]"]')?.value,
+  //         default:   row.querySelector('input[name*="\\[default\\]"]')?.value,
+  //         minLength: row.querySelector('input[name*="\\[min_length\\]"]')?.value,
+  //         maxLength: row.querySelector('input[name*="\\[max_length\\]"]')?.value,
+  //         pattern:   row.querySelector('input[name*="\\[pattern\\]"]')?.value,
+  //         minimum:   row.querySelector('input[name*="\\[minimum\\]"]')?.value,
+  //         maximum:   row.querySelector('input[name*="\\[maximum\\]"]')?.value
+  //       },
+  //       description: row.querySelector('input[name*="\\[description\\]"]')?.value || "",
+  //       example:     row.querySelector('input[name*="\\[example\\]"]')?.value
+  //     })
+  //   })
+  //   return params
+  // }
 
   // ====================== REQUEST BODY ======================
   addRequestBody(event) {
@@ -465,73 +509,60 @@ export default class extends Controller {
 
   // ====================== LIVE PREVIEW ======================
   updatePreview() {
-    const activeTab = document.querySelector(".tab-content:not(.hidden)")
-    if (!activeTab) return
-
-    let sampleData = {}
-    if (activeTab.id === "request-tab") {
-      sampleData = this.buildRequestExample()
-    } else if (activeTab.id === "responses-tab") {
-      sampleData = this.buildResponsesExample()
-    }
-
-    this.renderPreview(sampleData)
+    // Debounce for smooth performance on mobile/touch devices
+    if (this.previewTimeout) clearTimeout(this.previewTimeout)
+    this.previewTimeout = setTimeout(() => {
+      if (!this.currentPathKey) {
+        this.renderEmptyPreview()
+        return
+      }
+      const fullPreview = this.buildFullOperationPreview()
+      this.renderFullPreview(fullPreview)
+    }, 120)
   }
 
-  buildRequestExample() {
-    const example = {}
-    const rows = this.requestBodyContainerTarget?.querySelectorAll(".request-body-property-row") || []
-    rows.forEach(row => {
-      const name = row.querySelector('input[name*="\\[name\\]"]')?.value?.trim()
-      if (!name) return
-      const exField = row.querySelector('input[name*="\\[example\\]"]')?.value?.trim()
-      const type = row.querySelector('select[name*="\\[type\\]"]')?.value
-      example[name] = exField || this.getSampleValueForType(type)
-    })
-    return example
-  }
-
-  buildResponsesExample() {
-    const responsesExample = {}
-    document.querySelectorAll(".response-row").forEach(row => {
-      const status = row.querySelector('select[name*="status_code"]')?.value || "200"
-      const example = {}
-      row.querySelectorAll(".response-property-row").forEach(propRow => {
-        const name = propRow.querySelector('input[name*="\\[name\\]"]')?.value?.trim()
-        if (!name) return
-        const exField = propRow.querySelector('input[name*="\\[example\\]"]')?.value?.trim()
-        const type = propRow.querySelector('select[name*="\\[type\\]"]')?.value
-        example[name] = exField || this.getSampleValueForType(type)
-      })
-      if (Object.keys(example).length > 0) responsesExample[status] = example
-    })
-    return responsesExample
-  }
-
-  getSampleValueForType(type) {
-    switch (type) {
-      case "string": return "example_value"
-      case "integer": case "number": return 42
-      case "boolean": return true
-      case "array": return ["item1", "item2"]
-      case "object": return { key: "value" }
-      case "enum": return "one_of_the_values"
-      case "dictionary": return { key: "value" }
-      default: return null
+  buildFullOperationPreview() {
+    const [method, path] = this.currentPathKey.split(" ")
+    return {
+      paths: {
+        [path]: {
+          [method.toLowerCase()]: {
+            summary: this.getOperationSummary(),
+            description: this.getOperationDescription(),
+            operationId: this.getOperationId(),
+            tags: this.getTags(),
+            deprecated: this.isDeprecated(),
+            parameters: this.collectParameters(),
+            ...(this.collectRequestBody() && Object.keys(this.collectRequestBody()).length > 0 && { requestBody: this.collectRequestBody() }),
+            responses: this.collectResponses() || {}
+          }
+        }
+      }
     }
   }
 
-  renderPreview(data) {
+  renderFullPreview(data) {
     const pane = this.previewTarget
     if (!pane) return
 
-    if (Object.keys(data).length === 0) {
-      pane.innerHTML = `<div class="text-zinc-500 italic text-center mt-20">Add properties &amp; examples to see live JSON</div>`
-      return
-    }
+    const jsonString = JSON.stringify(data, null, 2)
+    pane.innerHTML = `
+    <div class="bg-zinc-900 rounded-3xl p-5 border border-zinc-700 h-full flex flex-col">
+      <div class="flex items-center justify-between mb-4 flex-shrink-0">
+        <span class="text-xs uppercase tracking-widest font-medium text-emerald-400">Live OpenAPI Preview</span>
+        <span class="px-3 py-1 text-[10px] font-mono bg-zinc-800 rounded-2xl">${this.currentPathKey}</span>
+      </div>
+      <pre class="flex-1 text-emerald-200 text-sm leading-relaxed overflow-auto bg-zinc-950 p-4 rounded-2xl border border-zinc-800 whitespace-pre max-h-[calc(100vh-280px)] md:max-h-none">${this.escapeHtml(jsonString)}</pre>
+    </div>
+  `
+  }
 
-    const json = JSON.stringify(data, null, 2)
-    pane.innerHTML = `<pre class="text-emerald-300 whitespace-pre overflow-auto">${this.escapeHtml(json)}</pre>`
+  renderEmptyPreview() {
+    this.previewTarget.innerHTML = `
+    <div class="text-zinc-500 italic flex items-center justify-center h-64 text-center px-8">
+      Select or add a path to see full live preview
+    </div>
+  `
   }
 
   escapeHtml(unsafe) {
@@ -542,6 +573,86 @@ export default class extends Controller {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;")
   }
+
+  // // ====================== LIVE PREVIEW ======================
+  // updatePreview() {
+  //   const activeTab = document.querySelector(".tab-content:not(.hidden)")
+  //   if (!activeTab) return
+  //
+  //   let sampleData = {}
+  //   if (activeTab.id === "request-tab") {
+  //     sampleData = this.buildRequestExample()
+  //   } else if (activeTab.id === "responses-tab") {
+  //     sampleData = this.buildResponsesExample()
+  //   }
+  //
+  //   this.renderPreview(sampleData)
+  // }
+  //
+  // buildRequestExample() {
+  //   const example = {}
+  //   const rows = this.requestBodyContainerTarget?.querySelectorAll(".request-body-property-row") || []
+  //   rows.forEach(row => {
+  //     const name = row.querySelector('input[name*="\\[name\\]"]')?.value?.trim()
+  //     if (!name) return
+  //     const exField = row.querySelector('input[name*="\\[example\\]"]')?.value?.trim()
+  //     const type = row.querySelector('select[name*="\\[type\\]"]')?.value
+  //     example[name] = exField || this.getSampleValueForType(type)
+  //   })
+  //   return example
+  // }
+  //
+  // buildResponsesExample() {
+  //   const responsesExample = {}
+  //   document.querySelectorAll(".response-row").forEach(row => {
+  //     const status = row.querySelector('select[name*="status_code"]')?.value || "200"
+  //     const example = {}
+  //     row.querySelectorAll(".response-property-row").forEach(propRow => {
+  //       const name = propRow.querySelector('input[name*="\\[name\\]"]')?.value?.trim()
+  //       if (!name) return
+  //       const exField = propRow.querySelector('input[name*="\\[example\\]"]')?.value?.trim()
+  //       const type = propRow.querySelector('select[name*="\\[type\\]"]')?.value
+  //       example[name] = exField || this.getSampleValueForType(type)
+  //     })
+  //     if (Object.keys(example).length > 0) responsesExample[status] = example
+  //   })
+  //   return responsesExample
+  // }
+  //
+  // getSampleValueForType(type) {
+  //   switch (type) {
+  //     case "string": return "example_value"
+  //     case "integer": case "number": return 42
+  //     case "boolean": return true
+  //     case "array": return ["item1", "item2"]
+  //     case "object": return { key: "value" }
+  //     case "enum": return "one_of_the_values"
+  //     case "dictionary": return { key: "value" }
+  //     default: return null
+  //   }
+  // }
+  //
+  // renderPreview(data) {
+  //   const pane = this.previewTarget
+  //   if (!pane) return
+  //
+  //   if (Object.keys(data).length === 0) {
+  //     pane.innerHTML = `<div class="text-zinc-500 italic text-center mt-20">Add properties &amp; examples to see live JSON</div>`
+  //     return
+  //   }
+  //
+  //   const json = JSON.stringify(data, null, 2)
+  //   pane.innerHTML = `<pre class="text-emerald-300 whitespace-pre overflow-auto">${this.escapeHtml(json)}</pre>`
+  // }
+  //
+  // escapeHtml(unsafe) {
+  //   return unsafe
+  //       .replace(/&/g, "&amp;")
+  //       .replace(/</g, "&lt;")
+  //       .replace(/>/g, "&gt;")
+  //       .replace(/"/g, "&quot;")
+  //       .replace(/'/g, "&#039;")
+  // }
 
   // ====================== SUBMIT + SERIALIZER ======================
   handleSubmit(event) {

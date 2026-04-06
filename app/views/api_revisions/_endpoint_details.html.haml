@@ -1,29 +1,51 @@
-%div{id: dom_id(endpoint, :details)}
-  .grid.grid-cols-12.gap-8.mt-6
-    / PARAMETERS
-    - if endpoint.parameters.any?
-      .col-span-12
-        %h4.text-lg.font-medium.mb-3 Parameters
-        .bg-zinc-950.border.border-zinc-700.rounded-2xl.overflow-hidden
-          %table.w-full
-            %thead.bg-zinc-900
-              %tr
-                %th.px-6.py-3.text-left.text-xs.font-medium.text-zinc-500 Name
-                %th.px-6.py-3.text-left.text-xs.font-medium.text-zinc-500 In
-                %th.px-6.py-3.text-left.text-xs.font-medium.text-zinc-500 Type
-                %th.px-6.py-3.text-left.text-xs.font-medium.text-zinc-500 Required
-                %th.px-6.py-3.text-left.text-xs.font-medium.text-zinc-500 Description
-            %tbody.divide-y.divide-zinc-800
-              - endpoint.parameters.each do |p|
-                %tr
-                  %td.px-6.py-3.font-mono= p.name
-                  %td.px-6.py-3= p.in_location
-                  %td.px-6.py-3= p.schema&.[]("type") || "string"
-                  %td.px-6.py-3
-                    - if p.required
-                      %span.text-emerald-400 ✓
-                  %td.px-6.py-3.text-zinc-400= p.description
+/ PARAMETERS
+- if endpoint.parameters.any?
+  .col-span-12
+    %h4.text-lg.font-medium.mb-3 Parameters
+    .bg-zinc-950.border.border-zinc-700.rounded-2xl.overflow-hidden
+      %div{role: "table", "aria-label": "Endpoint parameters"}
 
+        / Header row – hidden below lg, matches original design exactly at lg+
+        %div{role: "rowgroup"}
+          %div{ role: "row", class: "hidden lg:grid lg:grid-cols-[2fr_1fr_1fr_80px_3fr] bg-zinc-900 px-6 py-3 text-left text-xs font-medium text-zinc-500 border-b border-zinc-700" }
+            %div{role: "columnheader"} Name
+            %div{role: "columnheader"} In
+            %div{role: "columnheader"} Type
+            %div{role: "columnheader"} Required
+            %div{role: "columnheader"} Description
+
+        / Data rows – new hybrid responsive layout
+        %div{role: "rowgroup"}
+          - endpoint.parameters.each do |p|
+            %div{ role: "row", class: "grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_80px_3fr] px-6 py-6 lg:py-3 border-b last:border-b-0 border-zinc-800 gap-y-6 lg:gap-y-0 lg:items-center" }
+
+              / Name – always full-width on top below lg
+              %div{role: "cell", class: "col-span-1"}
+                %span.lg:hidden.block.text-xs.font-medium.text-zinc-400.mb-2 Name
+                %div.font-mono.text-sm= p.name
+
+              / Grouped middle row: In + Type + Required (horizontal on <lg)
+              %div{class: "grid grid-cols-3 gap-x-6 lg:contents col-span-1"}
+                / In cell
+                %div{role: "cell", class: "lg:col-span-1"}
+                  %span.lg:hidden.block.text-xs.font-medium.text-zinc-400.mb-2 In
+                  %div.text-sm= p.in_location
+
+                / Type cell
+                %div{role: "cell", class: "lg:col-span-1"}
+                  %span.lg:hidden.block.text-xs.font-medium.text-zinc-400.mb-2 Type
+                  %div.text-sm= p.schema&.[]("type") || "string"
+
+                / Required cell (preserves your exact original conditional logic)
+                %div{role: "cell", class: "lg:col-span-1 flex justify-center"}
+                  %span.lg:hidden.block.text-xs.font-medium.text-zinc-400.mb-2 Required
+                  - if p.required
+                    %span.text-emerald-400.text-xl.leading-none ✓
+
+              / Description – always full-width at bottom below lg
+              %div{role: "cell", class: "col-span-1"}
+                %span.lg:hidden.block.text-xs.font-medium.text-zinc-400.mb-2 Description
+                %div.text-sm.text-zinc-400= p.description
     / REQUEST BODY
     - if endpoint.request_body.present? && endpoint.request_body.any?
       .col-span-12.mt-8
@@ -43,3 +65,49 @@
                 %span.text-zinc-400= resp.description
               - if resp.content.present?
                 %pre.text-sm.font-mono.overflow-auto.bg-black.p-4.rounded= JSON.pretty_generate(resp.content)
+
+-# %div{id: dom_id(endpoint, :details)}
+-#   .grid.grid-cols-12.gap-8.mt-6
+-#     / PARAMETERS
+-#     - if endpoint.parameters.any?
+-#       .col-span-12
+-#         %h4.text-lg.font-medium.mb-3 Parameters
+-#         .bg-zinc-950.border.border-zinc-700.rounded-2xl.overflow-hidden
+-#           %table.w-full
+-#             %thead.bg-zinc-900
+-#               %tr
+-#                 %th.px-6.py-3.text-left.text-xs.font-medium.text-zinc-500 Name
+-#                 %th.px-6.py-3.text-left.text-xs.font-medium.text-zinc-500 In
+-#                 %th.px-6.py-3.text-left.text-xs.font-medium.text-zinc-500 Type
+-#                 %th.px-6.py-3.text-left.text-xs.font-medium.text-zinc-500 Required
+-#                 %th.px-6.py-3.text-left.text-xs.font-medium.text-zinc-500 Description
+-#             %tbody.divide-y.divide-zinc-800
+-#               - endpoint.parameters.each do |p|
+-#                 %tr
+-#                   %td.px-6.py-3.font-mono= p.name
+-#                   %td.px-6.py-3= p.in_location
+-#                   %td.px-6.py-3= p.schema&.[]("type") || "string"
+-#                   %td.px-6.py-3
+-#                     - if p.required
+-#                       %span.text-emerald-400 ✓
+-#                   %td.px-6.py-3.text-zinc-400= p.description
+-#
+-#     / REQUEST BODY
+-#     - if endpoint.request_body.present? && endpoint.request_body.any?
+-#       .col-span-12.mt-8
+-#         %h4.text-lg.font-medium.mb-3 Request Body
+-#         .bg-zinc-950.border.border-zinc-700.rounded-2xl.p-6
+-#           %pre.text-sm.font-mono.text-emerald-300.overflow-auto= JSON.pretty_generate(endpoint.request_body)
+-#
+-#     / RESPONSES
+-#     - if endpoint.responses.any?
+-#       .col-span-12.mt-8
+-#         %h4.text-lg.font-medium.mb-3 Responses
+-#         .space-y-6
+-#           - endpoint.responses.each do |resp|
+-#             .bg-zinc-950.border.border-zinc-700.rounded-2xl.p-6
+-#               .flex.items-center.gap-3.mb-4
+-#                 %span.px-4.py-1.bg-zinc-800.text-emerald-300.font-mono.rounded= resp.status_code
+-#                 %span.text-zinc-400= resp.description
+-#               - if resp.content.present?
+-#                 %pre.text-sm.font-mono.overflow-auto.bg-black.p-4.rounded= JSON.pretty_generate(resp.content)

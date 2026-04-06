@@ -1,7 +1,6 @@
-.max-w-8xl.mx-auto
+.max-w-8xl.mx-auto.px-4.md:px-8
   / HEADER (always visible)
-  -# .flex.justify-between.items-center.mb-10{ data: { controller: "spec-mode" } }
-  .flex.justify-between.items-center.mb-10{ data: { controller: "spec-mode" } }
+  .flex.flex-col.xl:flex-row.justify-between.items-center.mb-10{ data: { controller: "spec-mode" } }
     .flex.items-center.gap-6
       %div
         %h1.text-4xl.font-bold.tracking-tighter
@@ -12,7 +11,7 @@
           = @api_specification.project.name
 
       - if @selected_revision
-        .flex.items-center.gap-2
+        .flex.flex-wrap.items-center.gap-2
           %span.text-sm.font-medium.text-zinc-400 Version:
           %span.px-2.py-1.text-xs.font-medium
             - if @selected_revision.is_published?
@@ -21,43 +20,46 @@
             - else
               %span.bg-amber-900.text-amber-300.p-2.rounded-full
                 Draft v#{@selected_revision.version}
-    %div#spec-mode-buttons{ class: "flex gap-3" }
-      - if @can_edit
-        - if @editing_mode
-          .flex-col.items-end.gap-2.flex
-            = link_to "Exit Edit Mode",
-                      project_api_specification_path(@project, @api_specification, branch: @branch),
-                      class: "px-6 py-3 bg-zinc-700 hover:bg-zinc-600 text-white rounded-2xl cursor-pointer",
-                      data: { turbo_frame: "spec-content spec-mode-buttons" }
-            %p.text-amber-400.text-sm.font-medium
-              Editing draft on branch <span class="font-mono">#{@branch}</span> (forked from published ##{@editing_revision.parent_revision_id || '—'})
 
-        - else
-          = link_to "Edit Specification",
-                    project_api_specification_path(@project, @api_specification, branch: @branch, edit_mode: "true"),
-                    class: "bg-emerald-600 hover:bg-emerald-700 px-8 py-3 rounded-3xl font-semibold text-white flex items-center gap-3 cursor-pointer",
-                    data: { turbo_frame: "spec-content spec-mode-buttons" }
-      - unless @editing_mode
+    .flex.gap-3.py-3
+      - if @can_edit
+        = button_tag "Exit Edit Mode",
+                     class: "hidden px-6 py-3 bg-zinc-700 hover:bg-zinc-600 text-white text-center rounded-2xl cursor-pointer",
+                     id: "exit-edit-mode",
+                     data: { action: "click->spec-mode#exitEdit" }
+        = button_tag "Edit Specification",
+                     class: "bg-emerald-600 hover:bg-emerald-700 px-8 py-3 rounded-3xl font-semibold text-white text-center flex items-center gap-3 cursor-pointer",
+                     id: "enter-edit-mode",
+                     data: { action: "click->spec-mode#enterEdit" }
+
+      - unless params[:edit_mode] == "true"
         - if @selected_revision
           = link_to "Export JSON",
                     project_api_specification_api_revision_path(@project, @api_specification, @selected_revision, format: :json),
-                    class: "px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-2xl font-medium flex items-center gap-2"
+                    class: "px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white text-center rounded-2xl font-medium flex items-center gap-2"
           = link_to "Export YAML",
                     project_api_specification_api_revision_path(@project, @api_specification, @selected_revision, format: :yaml),
-                    class: "px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-2xl font-medium flex items-center gap-2"
+                    class: "px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white text-center rounded-2xl font-medium flex items-center gap-2"
+
   = render "api_revisions/branch_selector"
+  - unless params[:edit_mode] == "true"
+    .block.xl:hidden
+      = form_with url: documentation_project_api_specification_api_revision_path(@project, @api_specification, @selected_revision), class: 'py-2', method: :get, local: true do |f|
+        = f.select :endpoint_id, options_from_collection_for_select(@selected_revision.endpoints.order(:path, :method), :id, ->(e) { "#{e.method} #{e.path}" }, params[:endpoint_id]), {},
+                    class: "block w-full custom-form-field bg-zinc-800 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-zinc-900",
+                    onchange: "this.form.submit()"
   / MAIN CONTENT — Turbo Frame
-  %div#spec-content{ class: "grid grid-cols-12 gap-8" }
-    - if @editing_mode
-      / Edit mode = full width (manual editor)
+  = turbo_frame_tag "spec-content", class: "grid grid-cols-1 lg:grid-cols-12 gap-8" do
+    - if params[:edit_mode] == "true"
       .col-span-12
         = render "api_specifications/edit_mode", revision: @editing_revision
     - else
       - if @selected_revision
-        / View mode = 4-col sidebar + 8-col docs
-        .col-span-4
+        / View mode – desktop grid
+        .col-span-12.xl:col-span-4.hidden.xl:block
           = render "api_specifications/paths_sidebar", revision: @selected_revision
-        .col-span-8
+
+        .col-span-12.xl:col-span-8
           = render "api_revisions/documentation_content",
                    api_revision: @selected_revision,
                    selected_endpoint: @selected_revision.endpoints.order(:path, :method).first
@@ -73,8 +75,89 @@
                       class: "inline-block bg-emerald-600 hover:bg-emerald-700 px-10 py-4 rounded-3xl font-semibold text-white text-lg" do
               + Create First Revision
 
-  / Revisions History (always visible)
+  / Revisions History
   .mt-12
     %details
       %summary.text-lg.font-medium.cursor-pointer.mb-4 Revisions History
       = render "api_revisions/revision_list", revisions: @api_specification.api_revisions.order(revision_number: :desc)
+
+-# .max-w-8xl.mx-auto
+-#   / HEADER (always visible)
+-#   -# .flex.justify-between.items-center.mb-10{ data: { controller: "spec-mode" } }
+-#   .flex.justify-between.items-center.mb-10{ data: { controller: "spec-mode" } }
+-#     .flex.items-center.gap-6
+-#       %div
+-#         %h1.text-4xl.font-bold.tracking-tighter
+-#           = @api_specification.name
+-#         %p.text-zinc-400
+-#           = @api_specification.description.presence || "No description provided"
+-#         %p.text-xs.text-zinc-500
+-#           = @api_specification.project.name
+-#
+-#       - if @selected_revision
+-#         .flex.items-center.gap-2
+-#           %span.text-sm.font-medium.text-zinc-400 Version:
+-#           %span.px-2.py-1.text-xs.font-medium
+-#             - if @selected_revision.is_published?
+-#               %span.bg-emerald-900.text-emerald-300.p-2.rounded-full
+-#                 Published v#{@selected_revision.version}
+-#             - else
+-#               %span.bg-amber-900.text-amber-300.p-2.rounded-full
+-#                 Draft v#{@selected_revision.version}
+-#     %div#spec-mode-buttons{ class: "flex gap-3" }
+-#       - if @can_edit
+-#         - if @editing_mode
+-#           .flex-col.items-end.gap-2.flex
+-#             = link_to "Exit Edit Mode",
+-#                       project_api_specification_path(@project, @api_specification, branch: @branch),
+-#                       class: "px-6 py-3 bg-zinc-700 hover:bg-zinc-600 text-white rounded-2xl cursor-pointer",
+-#                       data: { turbo_frame: "spec-content spec-mode-buttons" }
+-#             %p.text-amber-400.text-sm.font-medium
+-#               Editing draft on branch <span class="font-mono">#{@branch}</span> (forked from published ##{@editing_revision.parent_revision_id || '—'})
+-#
+-#         - else
+-#           = link_to "Edit Specification",
+-#                     project_api_specification_path(@project, @api_specification, branch: @branch, edit_mode: "true"),
+-#                     class: "bg-emerald-600 hover:bg-emerald-700 px-8 py-3 rounded-3xl font-semibold text-white flex items-center gap-3 cursor-pointer",
+-#                     data: { turbo_frame: "spec-content spec-mode-buttons" }
+-#       - unless @editing_mode
+-#         - if @selected_revision
+-#           = link_to "Export JSON",
+-#                     project_api_specification_api_revision_path(@project, @api_specification, @selected_revision, format: :json),
+-#                     class: "px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-2xl font-medium flex items-center gap-2"
+-#           = link_to "Export YAML",
+-#                     project_api_specification_api_revision_path(@project, @api_specification, @selected_revision, format: :yaml),
+-#                     class: "px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-2xl font-medium flex items-center gap-2"
+-#   = render "api_revisions/branch_selector"
+-#   / MAIN CONTENT — Turbo Frame
+-#   %div#spec-content{ class: "grid grid-cols-12 gap-8" }
+-#     - if @editing_mode
+-#       / Edit mode = full width (manual editor)
+-#       .col-span-12
+-#         = render "api_specifications/edit_mode", revision: @editing_revision
+-#     - else
+-#       - if @selected_revision
+-#         / View mode = 4-col sidebar + 8-col docs
+-#         .col-span-4
+-#           = render "api_specifications/paths_sidebar", revision: @selected_revision
+-#         .col-span-8
+-#           = render "api_revisions/documentation_content",
+-#                    api_revision: @selected_revision,
+-#                    selected_endpoint: @selected_revision.endpoints.order(:path, :method).first
+-#       - else
+-#         .col-span-12
+-#           .bg-zinc-950.border.border-zinc-700.rounded-3xl.p-16.text-center
+-#             %div.mx-auto.w-16.h-16.bg-zinc-800.rounded-2xl.flex.items-center.justify-center.mb-6
+-#               📋
+-#             %h2.text-3xl.font-light.text-zinc-300.mb-3 No revisions yet
+-#             %p.text-zinc-500.max-w-md.mx-auto.mb-8
+-#               Create your first revision to see live paths, documentation, and export options.
+-#             = link_to new_project_api_specification_api_revision_path(@project, @api_specification),
+-#                       class: "inline-block bg-emerald-600 hover:bg-emerald-700 px-10 py-4 rounded-3xl font-semibold text-white text-lg" do
+-#               + Create First Revision
+-#
+-#   / Revisions History (always visible)
+-#   .mt-12
+-#     %details
+-#       %summary.text-lg.font-medium.cursor-pointer.mb-4 Revisions History
+-#       = render "api_revisions/revision_list", revisions: @api_specification.api_revisions.order(revision_number: :desc)

@@ -18,11 +18,58 @@
     = javascript_importmap_tags
   %body.bg-zinc-950.text-zinc-200.font-sans
     = render "shared/flash"
+
+    %el-dialog
+      %dialog#mobileAppSidebar{aria: {labelledby: "sidebar-title"}, class: "fixed inset-0 size-auto max-h-none max-w-none overflow-hidden bg-transparent backdrop:bg-transparent"}
+        %div{tabindex: "0", class: "absolute inset-0 pl-10 focus:outline-none sm:pl-16"}
+          %el-dialog-panel{class: "ml-auto block size-full max-w-md transform transition duration-500 ease-in-out data-closed:translate-x-full sm:duration-700"}
+            %div{class: "relative flex h-full flex-col overflow-y-auto bg-zinc-900 py-6 shadow-xl"}
+              %div{class: "px-4 sm:px-6"}
+                %div{class: "flex items-start justify-between"}
+                  %h2#sidebar-title{class: "text-2xl font-bold tracking-tighter"} Doc Arise
+                  %button{type: "button", command: "close", commandfor: "mobileAppSidebar", class: "relative rounded-md text-zinc-400 hover:text-white"}
+                    %span.sr-only Close sidebar
+                    %svg{viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "2", class: "size-6"}
+                      %path{stroke_linecap: "round", stroke_linejoin: "round", d: "M6 18L18 6M6 6l12 12"}
+              %div{class: "relative mt-6 flex-1 px-4 sm:px-6"}
+                = render "shared/sidebar"
+
     .flex.h-screen.overflow-hidden
-      = render "shared/sidebar"
+      / Desktop sidebar
+      .hidden.lg:flex
+        = render "shared/sidebar"
 
       .flex-1.flex.flex-col
         = render "shared/navbar"
 
-        .flex-1.p-8.overflow-y-auto
+        .flex-1.p-4.md:p-8.overflow-y-auto
           = yield
+
+-# !!!
+-# %html
+-#   %head
+-#     %meta{:content => "text/html; charset=UTF-8", "http-equiv" => "Content-Type"}/
+-#     %title= content_for(:title) || "Doc Arise"
+-#     %meta{:content => "width=device-width,initial-scale=1", :name => "viewport"}/
+-#     %meta{:content => "yes", :name => "apple-mobile-web-app-capable"}/
+-#     %meta{:content => "Doc Arise", :name => "application-name"}/
+-#     %meta{:content => "yes", :name => "mobile-web-app-capable"}/
+-#     = csrf_meta_tags
+-#     = csp_meta_tag
+-#     = yield :head
+-#     %link{:href => "/icon.png", :rel => "icon", :type => "image/png"}/
+-#     %link{:href => "/icon.svg", :rel => "icon", :type => "image/svg+xml"}/
+-#     %link{:href => "/icon.png", :rel => "apple-touch-icon"}/
+-#     = stylesheet_link_tag "tailwind", "data-turbo-track": "reload"
+-#     = stylesheet_link_tag "application", "data-turbo-track": "reload"
+-#     = javascript_importmap_tags
+-#   %body.bg-zinc-950.text-zinc-200.font-sans
+-#     = render "shared/flash"
+-#     .flex.h-screen.overflow-hidden
+-#       = render "shared/sidebar"
+-#
+-#       .flex-1.flex.flex-col
+-#         = render "shared/navbar"
+-#
+-#         .flex-1.p-8.overflow-y-auto
+-#           = yield
